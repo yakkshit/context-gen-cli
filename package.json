@@ -1,0 +1,48 @@
+{
+  "name": "context-gen-cli",
+  "version": "1.2.2",
+  "description": "A CLI tool that scans any project, builds a graph-based context model, and generates an agent.md file for LLMs.",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "context-gen-cli": "./src/index.js",
+    "ctx": "./src/index.js"
+  },
+  "files": [
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node src/index.js",
+    "test": "node src/index.js test/fixture"
+  },
+  "keywords": [
+    "llm",
+    "context",
+    "agent",
+    "cli",
+    "code-analysis",
+    "graph"
+  ],
+  "author": "yakkshit",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^8.7.0",
+    "@modelcontextprotocol/sdk": "^1.30.0",
+    "chalk": "^6.0.0",
+    "chokidar": "^5.0.0",
+    "commander": "^15.0.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "figlet": "^1.11.4",
+    "globby": "^16.2.4",
+    "ignore": "^7.0.6",
+    "js-yaml": "^5.4.1",
+    "ngrok": "^5.0.0-beta.2",
+    "ora": "^9.4.1"
+  }
+}

@@ -1,0 +1,23 @@
+# context-gen-cli security & secrets
+.env
+.env.*
+.context-gen-key
+mcp.md
+
+# Dependencies
+node_modules/
+.venv/
+venv/
+env/
+
+# Build artifacts & caches
+dist/
+build/
+*.egg-info/
+__pycache__/
+*.pyc
+.pytest_cache/
+.DS_Store
+
+# Output
+context/

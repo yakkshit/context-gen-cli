@@ -1,0 +1,58 @@
+{
+  "version": "1.0.0",
+  "generatedAt": "2026-08-27T23:23:22.860970+00:00",
+  "projectPath": "/Users/yakkshit/Downloads/project/context graph/python/tests/test_fixture",
+  "overview": "Project workspace rooted at test_fixture.",
+  "techStack": [
+    "Python"
+  ],
+  "directoryStructure": "test_fixture/\n\u251c\u2500\u2500 .gitignore\n\u251c\u2500\u2500 main.py\n\u2514\u2500\u2500 utils.py",
+  "keyFiles": [
+    {
+      "path": "main.py",
+      "description": "Main application entry point."
+    },
+    {
+      "path": "utils.py",
+      "description": "Utility helper functions."
+    }
+  ],
+  "dependencies": {
+    "production": {},
+    "development": {}
+  },
+  "dependencyGraph": {
+    "nodes": [
+      {
+        "file": "main.py",
+        "type": "entry",
+        "imports": [
+          "utils.py"
+        ],
+        "importedBy": []
+      },
+      {
+        "file": "utils.py",
+        "type": "util",
+        "imports": [],
+        "importedBy": [
+          "main.py"
+        ]
+      }
+    ],
+    "edges": [
+      {
+        "from": "main.py",
+        "to": "utils.py",
+        "type": "import"
+      }
+    ]
+  },
+  "entryPoints": [
+    "main.py"
+  ],
+  "utilities": [
+    "utils.py"
+  ],
+  "scripts": {}
+}

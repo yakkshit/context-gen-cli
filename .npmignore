@@ -1,0 +1,8 @@
+node_modules/
+test/
+.git/
+.DS_Store
+*.log
+agent.md
+agent.json
+agent.yaml

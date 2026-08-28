@@ -1,0 +1,26 @@
+# Project Architecture & Context Model (YAML)
+# Generated automatically by context-gen-cli (Python Edition)
+version: "1.0.0"
+generated_at: "2026-08-27T23:23:22.862032+00:00"
+project_path: "/Users/yakkshit/Downloads/project/context graph/python/tests/test_fixture"
+overview: "Project workspace rooted at test_fixture."
+
+tech_stack:
+  - "Python"
+
+entry_points:
+  - "main.py"
+
+utilities:
+  - "utils.py"
+
+key_files:
+  - path: "main.py"
+    description: "Main application entry point."
+  - path: "utils.py"
+    description: "Utility helper functions."
+
+dependency_edges:
+  - from: "main.py"
+    to: "utils.py"
+    type: "import"

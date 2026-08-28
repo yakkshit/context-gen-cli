@@ -1,0 +1,394 @@
+version: 1.0.0
+generatedAt: '2026-08-27T23:02:36.806Z'
+projectPath: /Users/yakkshit/Downloads/project/context graph
+overview: >-
+  A lightweight npm CLI tool that scans any codebase, constructs a dependency and architectural graph model, and outputs
+  a concise agent.md context file ready to paste into any LLM (ChatGPT, Claude, Gemini, etc.).
+techStack:
+  - JSON
+  - Markdown
+  - Python
+  - JavaScript
+  - Shell Script
+  - Express.js
+  - Node.js
+directoryStructure: |-
+  └── context graph/
+      ├── .vscode/
+      │   └── mcp.json
+      ├── python/
+      │   ├── .pytest_cache/
+      │   │   ├── v/
+      │   │   │   └── ...
+      │   │   ├── .gitignore
+      │   │   ├── CACHEDIR.TAG
+      │   │   └── README.md
+      │   ├── context_gen/
+      │   │   ├── __init__.py
+      │   │   ├── cli.py
+      │   │   ├── extractor.py
+      │   │   ├── generator.py
+      │   │   ├── graph.py
+      │   │   └── scanner.py
+      │   ├── context_gen_cli.egg-info/
+      │   │   ├── dependency_links.txt
+      │   │   ├── entry_points.txt
+      │   │   ├── PKG-INFO
+      │   │   ├── requires.txt
+      │   │   ├── SOURCES.txt
+      │   │   └── top_level.txt
+      │   ├── tests/
+      │   │   ├── test_fixture/
+      │   │   │   └── ...
+      │   │   └── verify_scanner_graph.py
+      │   ├── pyproject.toml
+      │   └── README.md
+      ├── src/
+      │   ├── mcp/
+      │   │   ├── auth.js
+      │   │   ├── dashboard.js
+      │   │   ├── server.js
+      │   │   ├── tools.js
+      │   │   └── tunnel.js
+      │   ├── config.js
+      │   ├── extractor.js
+      │   ├── generator.js
+      │   ├── graph.js
+      │   ├── index.js
+      │   ├── init.js
+      │   ├── scanner.js
+      │   └── security.js
+      ├── test/
+      │   └── fixture/
+      │       ├── .vscode/
+      │       │   └── ...
+      │       ├── src/
+      │       │   └── ...
+      │       ├── .gitignore
+      │       ├── main.py
+      │       ├── math_helper.py
+      │       ├── package.json
+      │       ├── README-ALT.md
+      │       ├── README.md
+      │       └── requirements.txt
+      ├── .gitignore
+      ├── .npmignore
+      ├── LICENSE
+      ├── package-lock.json
+      ├── package.json
+      ├── publish.sh
+      └── README.md
+keyFiles:
+  - path: python/.pytest_cache/README.md
+    description: Project documentation and overview.
+  - path: python/tests/test_fixture/main.py
+    description: Main application entry point.
+  - path: python/README.md
+    description: Project documentation and overview.
+  - path: src/mcp/auth.js
+    description: Ensures security files (.env, .env.*, .context-gen-key, mcp.md) are in .gitignore.
+  - path: src/mcp/dashboard.js
+    description: Provides a UI for inspecting connection details, copying IDE configs,.
+  - path: src/mcp/server.js
+    description: Generates an mcp.md documentation file in the context directory.
+  - path: src/mcp/tools.js
+    description: List of sensitive filenames or patterns that must NEVER be served to any LLM.
+  - path: src/mcp/tunnel.js
+    description: Source module.
+  - path: src/config.js
+    description: Returns the default configuration object for context-gen.
+  - path: src/extractor.js
+    description: Extracts recent git commits from the project root if it is a git repository.
+  - path: src/generator.js
+    description: Generates the full agent.md markdown document from scan results, extracted metadata, and dependency graph.
+  - path: src/graph.js
+    description: Supported source file extensions for dependency graph analysis.
+  - path: src/index.js
+    description: Scans a project, builds an architecture & dependency graph model,.
+  - path: src/init.js
+    description: Displays the ASCII art welcome banner.
+  - path: src/scanner.js
+    description: Source module.
+dependencies:
+  production:
+    '@inquirer/prompts': ^8.7.0
+    '@modelcontextprotocol/sdk': ^1.30.0
+    chalk: ^6.0.0
+    chokidar: ^5.0.0
+    commander: ^15.0.0
+    dotenv: ^17.4.2
+    express: ^5.2.1
+    figlet: ^1.11.4
+    globby: ^16.2.4
+    ignore: ^7.0.6
+    js-yaml: ^5.4.1
+    ngrok: ^5.0.0-beta.2
+    ora: ^9.4.1
+  development: {}
+entryPoints:
+  - src/index.js
+  - test/fixture/src/index.js
+  - python/tests/test_fixture/main.py
+  - test/fixture/main.py
+dependencyGraph:
+  nodes:
+    - file: python/context_gen/__init__.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/context_gen/cli.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/context_gen/extractor.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/context_gen/generator.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/context_gen/graph.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/context_gen/scanner.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: python/tests/test_fixture/main.py
+      type: entry
+      imports:
+        - python/tests/test_fixture/utils.py
+      importedBy: []
+    - file: python/tests/test_fixture/utils.py
+      type: util
+      imports: []
+      importedBy:
+        - python/tests/test_fixture/main.py
+    - file: python/tests/verify_scanner_graph.py
+      type: module
+      imports: []
+      importedBy: []
+    - file: src/mcp/auth.js
+      type: module
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+    - file: src/mcp/dashboard.js
+      type: module
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+    - file: src/mcp/server.js
+      type: module
+      imports:
+        - src/mcp/auth.js
+        - src/mcp/tools.js
+        - src/mcp/tunnel.js
+        - src/mcp/dashboard.js
+        - src/scanner.js
+        - src/extractor.js
+        - src/graph.js
+        - src/generator.js
+      importedBy:
+        - src/index.js
+    - file: src/mcp/tools.js
+      type: module
+      imports:
+        - src/scanner.js
+        - src/extractor.js
+        - src/graph.js
+        - src/generator.js
+      importedBy:
+        - src/mcp/server.js
+    - file: src/mcp/tunnel.js
+      type: module
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+    - file: src/config.js
+      type: util
+      imports: []
+      importedBy:
+        - src/index.js
+        - src/init.js
+        - src/scanner.js
+    - file: src/extractor.js
+      type: util
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+        - src/mcp/tools.js
+        - src/index.js
+    - file: src/generator.js
+      type: util
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+        - src/mcp/tools.js
+        - src/index.js
+    - file: src/graph.js
+      type: util
+      imports: []
+      importedBy:
+        - src/mcp/server.js
+        - src/mcp/tools.js
+        - src/index.js
+    - file: src/index.js
+      type: entry
+      imports:
+        - src/scanner.js
+        - src/extractor.js
+        - src/graph.js
+        - src/generator.js
+        - src/config.js
+        - src/init.js
+        - src/mcp/server.js
+      importedBy: []
+    - file: src/init.js
+      type: module
+      imports:
+        - src/config.js
+      importedBy:
+        - src/index.js
+    - file: src/scanner.js
+      type: util
+      imports:
+        - src/config.js
+      importedBy:
+        - src/mcp/server.js
+        - src/mcp/tools.js
+        - src/index.js
+    - file: test/fixture/src/components/App.js
+      type: component
+      imports:
+        - test/fixture/src/utils/math.js
+      importedBy:
+        - test/fixture/src/index.js
+    - file: test/fixture/src/utils/math.js
+      type: util
+      imports: []
+      importedBy:
+        - test/fixture/src/components/App.js
+        - test/fixture/src/index.js
+    - file: test/fixture/src/index.js
+      type: entry
+      imports:
+        - test/fixture/src/components/App.js
+        - test/fixture/src/utils/math.js
+      importedBy: []
+    - file: test/fixture/main.py
+      type: entry
+      imports:
+        - test/fixture/math_helper.py
+      importedBy: []
+    - file: test/fixture/math_helper.py
+      type: util
+      imports: []
+      importedBy:
+        - test/fixture/main.py
+  edges:
+    - from: python/tests/test_fixture/main.py
+      to: python/tests/test_fixture/utils.py
+      type: import
+    - from: src/mcp/server.js
+      to: src/mcp/auth.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/mcp/tools.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/mcp/tunnel.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/mcp/dashboard.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/scanner.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/extractor.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/graph.js
+      type: import
+    - from: src/mcp/server.js
+      to: src/generator.js
+      type: import
+    - from: src/mcp/tools.js
+      to: src/scanner.js
+      type: import
+    - from: src/mcp/tools.js
+      to: src/extractor.js
+      type: import
+    - from: src/mcp/tools.js
+      to: src/graph.js
+      type: import
+    - from: src/mcp/tools.js
+      to: src/generator.js
+      type: import
+    - from: src/index.js
+      to: src/scanner.js
+      type: import
+    - from: src/index.js
+      to: src/extractor.js
+      type: import
+    - from: src/index.js
+      to: src/graph.js
+      type: import
+    - from: src/index.js
+      to: src/generator.js
+      type: import
+    - from: src/index.js
+      to: src/config.js
+      type: import
+    - from: src/index.js
+      to: src/init.js
+      type: import
+    - from: src/index.js
+      to: src/mcp/server.js
+      type: import
+    - from: src/init.js
+      to: src/config.js
+      type: import
+    - from: src/scanner.js
+      to: src/config.js
+      type: import
+    - from: test/fixture/src/components/App.js
+      to: test/fixture/src/utils/math.js
+      type: import
+    - from: test/fixture/src/index.js
+      to: test/fixture/src/components/App.js
+      type: import
+    - from: test/fixture/src/index.js
+      to: test/fixture/src/utils/math.js
+      type: import
+    - from: test/fixture/main.py
+      to: test/fixture/math_helper.py
+      type: import
+  coreModules:
+    - src/mcp/server.js
+    - src/mcp/tools.js
+    - src/config.js
+    - src/extractor.js
+    - src/generator.js
+    - src/graph.js
+    - src/init.js
+    - src/scanner.js
+    - test/fixture/src/components/App.js
+    - test/fixture/src/utils/math.js
+  utilities:
+    - src/config.js
+    - src/extractor.js
+    - src/generator.js
+    - src/graph.js
+    - src/scanner.js
+    - test/fixture/src/utils/math.js
+    - python/tests/test_fixture/utils.py
+    - test/fixture/math_helper.py
+recentCommits: []
+quickNotes:
+  - 'Execution Context: Refer to the entry points to understand application bootstrap.'
+  - 'Modularity: Check the Dependency Graph before refactoring to maintain module coupling.'
+  - 'Dependencies: Rely on the installed packages and runtimes listed under Tech Stack.'
