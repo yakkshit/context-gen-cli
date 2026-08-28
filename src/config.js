@@ -92,6 +92,7 @@ export function saveConfig(projectPath, config) {
   const resolvedPath = path.resolve(projectPath || process.cwd());
   const configFilePath = path.join(resolvedPath, CONFIG_FILE_NAME);
   const data = JSON.stringify(config, null, 2);
+  fs.mkdirSync(resolvedPath, { recursive: true });
   fs.writeFileSync(configFilePath, data, "utf-8");
   return configFilePath;
 }

@@ -320,16 +320,30 @@ program
   .option("-m, --mcp", "Start interactive MCP server with automatic triple context generation", false)
   .option("-p, --project <path>", "Directory path of the project to scan")
   .action(async (targetPath, options) => {
-    const projectDir = options.project || targetPath || ".";
+    let projectDir = options.project || targetPath || ".";
+    if (projectDir === "update" || projectDir === "generate") {
+      projectDir = ".";
+    }
     const rootDir = path.resolve(projectDir);
 
+    try {
+      const stats = await fs.stat(rootDir);
+      if (!stats.isDirectory()) {
+        console.error(chalk.red(`\n❌ Error: Target path is not a directory: ${chalk.bold(rootDir)}\n`));
+        process.exit(1);
+      }
+    } catch {
+      console.error(chalk.red(`\n❌ Error: Directory not found: ${chalk.bold(rootDir)}\n`));
+      process.exit(1);
+    }
+
     if (options.default) {
-      await startDefaultAllInOne(projectDir, options);
+      await startDefaultAllInOne(rootDir, options);
       return;
     }
 
     if (options.mcp) {
-      await startMcpInteractive(projectDir);
+      await startMcpInteractive(rootDir);
       return;
     }
 
@@ -512,6 +526,53 @@ program
   .action(async (targetPath) => {
     const { runInitWizard } = await import("./init.js");
     await runInitWizard(targetPath);
+  });
+
+program
+  .command("generate")
+  .alias("update")
+  .description("Generate or update project context files (agent.md, agent.json, agent.yaml)")
+  .argument("[path]", "Directory path of the project to scan", ".")
+  .option("-f, --format <type>", "Output format (md, json, yaml, or all)", "all")
+  .option("-o, --output <path>", "Custom output folder or file path")
+  .option("-p, --project <path>", "Directory path of the project to scan")
+  .action(async (targetPath, options) => {
+    const projectDir = options.project || (targetPath && targetPath !== "update" && targetPath !== "generate" ? targetPath : ".");
+    const rootDir = path.resolve(projectDir);
+    const config = loadConfig(rootDir);
+    const outputDir = options.output || config.outputDir || "context";
+    const outDirPath = path.resolve(rootDir, outputDir);
+    await fs.mkdir(outDirPath, { recursive: true });
+
+    const scanSpinner = ora({ text: chalk.blue("Scanning project files..."), color: "cyan" }).start();
+    const { files, tree, sensitiveFiles } = await scanProject(rootDir, 3, [], config);
+    scanSpinner.succeed(chalk.green(`✓ Found ${files.length} files`));
+
+    const graphSpinner = ora({ text: chalk.blue("Analyzing dependencies & modules..."), color: "magenta" }).start();
+    const metadata = await extractMetadata(rootDir, files);
+    const graph = await buildDependencyGraph(files, rootDir, metadata.pkgJson);
+    graphSpinner.succeed(chalk.green(`✓ Mapped ${graph.nodes.length} nodes and ${graph.edges.length} edges`));
+
+    const genSpinner = ora({ text: chalk.blue("Generating context files..."), color: "cyan" }).start();
+    const activeFormats = options.format
+      ? [options.format.toLowerCase()]
+      : (Array.isArray(config.outputFormats) && config.outputFormats.length > 0
+          ? config.outputFormats.map((f) => f.toLowerCase())
+          : ["md", "json", "yaml"]);
+
+    if (activeFormats.includes("md") || activeFormats.includes("all")) {
+      const mdContent = generateAgentMd({ tree, metadata, graph });
+      await fs.writeFile(path.join(outDirPath, "agent.md"), mdContent, "utf-8");
+    }
+    if (activeFormats.includes("json") || activeFormats.includes("all")) {
+      const jsonObject = generateAgentJson({ tree, metadata, graph, projectPath: rootDir });
+      await fs.writeFile(path.join(outDirPath, "agent.json"), JSON.stringify(jsonObject, null, 2), "utf-8");
+    }
+    if (activeFormats.includes("yaml") || activeFormats.includes("all")) {
+      const yamlContent = generateAgentYaml({ tree, metadata, graph, projectPath: rootDir });
+      await fs.writeFile(path.join(outDirPath, "agent.yaml"), yamlContent, "utf-8");
+    }
+    genSpinner.succeed(chalk.green(`✓ Context updated in ${chalk.bold(outputDir + "/")}`));
   });
 
 program
