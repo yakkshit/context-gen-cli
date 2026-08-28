@@ -182,14 +182,27 @@ if $PUBLISH_PYTHON; then
     fi
   fi
 
-  # Clean old builds
-  log_info "Cleaning old build artifacts..."
-  rm -rf dist/ build/ *.egg-info context_gen/*.egg-info
-  log_success "Cleaned"
-
   # Read current version
-  CURRENT_PY_VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('pyproject.toml', 'rb'))['project']['version'])" 2>/dev/null || grep -E '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
+  CURRENT_PY_VERSION=$(grep -E '^version = ' pyproject.toml | head -1 | sed 's/version = "\(.*\)"/\1/')
   log_info "Current Python version: $CURRENT_PY_VERSION"
+
+  # Bump Python version
+  if ! $DRY_RUN; then
+    IFS='.' read -r major minor patch <<< "$CURRENT_PY_VERSION"
+    case "$VERSION_BUMP" in
+      major) major=$((major + 1)); minor=0; patch=0 ;;
+      minor) minor=$((minor + 1)); patch=0 ;;
+      patch) patch=$((patch + 1)) ;;
+    esac
+    NEW_PY_VERSION="$major.$minor.$patch"
+    if $PUBLISH_NODE && [ -n "${NEW_VERSION:-}" ]; then
+      NEW_PY_VERSION="$NEW_VERSION"
+    fi
+    sed -i.bak "s/^version = \".*\"/version = \"$NEW_PY_VERSION\"/" pyproject.toml && rm -f pyproject.toml.bak
+    log_success "Bumped Python version: $CURRENT_PY_VERSION → $NEW_PY_VERSION"
+  else
+    log_info "[DRY RUN] Would bump Python version to $VERSION_BUMP"
+  fi
 
   # Build
   if ! $DRY_RUN; then
