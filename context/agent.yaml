@@ -1,13 +1,11 @@
 version: 1.0.0
-generatedAt: '2026-08-27T23:02:36.806Z'
+generatedAt: '2026-08-28T09:50:14.655Z'
 projectPath: /Users/yakkshit/Downloads/project/context graph
-overview: >-
-  A lightweight npm CLI tool that scans any codebase, constructs a dependency and architectural graph model, and outputs
-  a concise agent.md context file ready to paste into any LLM (ChatGPT, Claude, Gemini, etc.).
+overview: A CLI tool that scans any project, builds a graph-based context model, and generates an agent.md file for LLMs.
 techStack:
   - JSON
-  - Markdown
   - Python
+  - Markdown
   - JavaScript
   - Shell Script
   - Express.js
@@ -17,29 +15,19 @@ directoryStructure: |-
       ├── .vscode/
       │   └── mcp.json
       ├── python/
-      │   ├── .pytest_cache/
-      │   │   ├── v/
-      │   │   │   └── ...
-      │   │   ├── .gitignore
-      │   │   ├── CACHEDIR.TAG
-      │   │   └── README.md
       │   ├── context_gen/
+      │   │   ├── mcp/
+      │   │   │   └── ...
       │   │   ├── __init__.py
       │   │   ├── cli.py
       │   │   ├── extractor.py
       │   │   ├── generator.py
       │   │   ├── graph.py
       │   │   └── scanner.py
-      │   ├── context_gen_cli.egg-info/
-      │   │   ├── dependency_links.txt
-      │   │   ├── entry_points.txt
-      │   │   ├── PKG-INFO
-      │   │   ├── requires.txt
-      │   │   ├── SOURCES.txt
-      │   │   └── top_level.txt
       │   ├── tests/
       │   │   ├── test_fixture/
       │   │   │   └── ...
+      │   │   ├── test_advanced_tools.py
       │   │   └── verify_scanner_graph.py
       │   ├── pyproject.toml
       │   └── README.md
@@ -58,19 +46,6 @@ directoryStructure: |-
       │   ├── init.js
       │   ├── scanner.js
       │   └── security.js
-      ├── test/
-      │   └── fixture/
-      │       ├── .vscode/
-      │       │   └── ...
-      │       ├── src/
-      │       │   └── ...
-      │       ├── .gitignore
-      │       ├── main.py
-      │       ├── math_helper.py
-      │       ├── package.json
-      │       ├── README-ALT.md
-      │       ├── README.md
-      │       └── requirements.txt
       ├── .gitignore
       ├── .npmignore
       ├── LICENSE
@@ -79,8 +54,6 @@ directoryStructure: |-
       ├── publish.sh
       └── README.md
 keyFiles:
-  - path: python/.pytest_cache/README.md
-    description: Project documentation and overview.
   - path: python/tests/test_fixture/main.py
     description: Main application entry point.
   - path: python/README.md
@@ -109,6 +82,8 @@ keyFiles:
     description: Displays the ASCII art welcome banner.
   - path: src/scanner.js
     description: Source module.
+  - path: package.json
+    description: Project manifest, metadata, dependencies, and script definitions.
 dependencies:
   production:
     '@inquirer/prompts': ^8.7.0
@@ -127,11 +102,14 @@ dependencies:
   development: {}
 entryPoints:
   - src/index.js
-  - test/fixture/src/index.js
+  - ./src/index.js
   - python/tests/test_fixture/main.py
-  - test/fixture/main.py
 dependencyGraph:
   nodes:
+    - file: python/context_gen/mcp/__init__.py
+      type: module
+      imports: []
+      importedBy: []
     - file: python/context_gen/__init__.py
       type: module
       imports: []
@@ -166,6 +144,10 @@ dependencyGraph:
       imports: []
       importedBy:
         - python/tests/test_fixture/main.py
+    - file: python/tests/test_advanced_tools.py
+      type: module
+      imports: []
+      importedBy: []
     - file: python/tests/verify_scanner_graph.py
       type: module
       imports: []
@@ -260,34 +242,6 @@ dependencyGraph:
         - src/mcp/server.js
         - src/mcp/tools.js
         - src/index.js
-    - file: test/fixture/src/components/App.js
-      type: component
-      imports:
-        - test/fixture/src/utils/math.js
-      importedBy:
-        - test/fixture/src/index.js
-    - file: test/fixture/src/utils/math.js
-      type: util
-      imports: []
-      importedBy:
-        - test/fixture/src/components/App.js
-        - test/fixture/src/index.js
-    - file: test/fixture/src/index.js
-      type: entry
-      imports:
-        - test/fixture/src/components/App.js
-        - test/fixture/src/utils/math.js
-      importedBy: []
-    - file: test/fixture/main.py
-      type: entry
-      imports:
-        - test/fixture/math_helper.py
-      importedBy: []
-    - file: test/fixture/math_helper.py
-      type: util
-      imports: []
-      importedBy:
-        - test/fixture/main.py
   edges:
     - from: python/tests/test_fixture/main.py
       to: python/tests/test_fixture/utils.py
@@ -355,18 +309,6 @@ dependencyGraph:
     - from: src/scanner.js
       to: src/config.js
       type: import
-    - from: test/fixture/src/components/App.js
-      to: test/fixture/src/utils/math.js
-      type: import
-    - from: test/fixture/src/index.js
-      to: test/fixture/src/components/App.js
-      type: import
-    - from: test/fixture/src/index.js
-      to: test/fixture/src/utils/math.js
-      type: import
-    - from: test/fixture/main.py
-      to: test/fixture/math_helper.py
-      type: import
   coreModules:
     - src/mcp/server.js
     - src/mcp/tools.js
@@ -376,18 +318,30 @@ dependencyGraph:
     - src/graph.js
     - src/init.js
     - src/scanner.js
-    - test/fixture/src/components/App.js
-    - test/fixture/src/utils/math.js
   utilities:
     - src/config.js
     - src/extractor.js
     - src/generator.js
     - src/graph.js
     - src/scanner.js
-    - test/fixture/src/utils/math.js
     - python/tests/test_fixture/utils.py
-    - test/fixture/math_helper.py
-recentCommits: []
+recentCommits:
+  - hash: f888dde
+    message: Bump Python version to 1.2.4 and automate version bumping in publish.sh
+    date: 13 minutes ago
+    author: yakkshit
+  - hash: 9d58e5d
+    message: Fix ENOENT when saving config and add update/generate commands
+    date: 21 minutes ago
+    author: yakkshit
+  - hash: 8e4e538
+    message: Fix explain_architecture node attribute lookup and deprecation warnings
+    date: 29 minutes ago
+    author: yakkshit
+  - hash: e175c16
+    message: first commit
+    date: 2 hours ago
+    author: yakkshit
 quickNotes:
   - 'Execution Context: Refer to the entry points to understand application bootstrap.'
   - 'Modularity: Check the Dependency Graph before refactoring to maintain module coupling.'

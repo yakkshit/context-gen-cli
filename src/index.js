@@ -70,11 +70,22 @@ export async function startMcpInteractive(targetPath = ".") {
   console.log(chalk.bold.hex("#6366f1")("╚════════════════════════════════════════════════════════╝"));
   console.log("");
 
-  const configPath = path.join(rootDir, CONFIG_FILE_NAME);
   let config = loadConfig(rootDir);
-  try {
-    await fs.access(configPath);
-  } catch {
+  const candidateConfigPaths = [
+    path.join(rootDir, config.outputDir || "context", CONFIG_FILE_NAME),
+    path.join(rootDir, CONFIG_FILE_NAME)
+  ];
+
+  let hasConfig = false;
+  for (const cPath of candidateConfigPaths) {
+    try {
+      await fs.access(cPath);
+      hasConfig = true;
+      break;
+    } catch {}
+  }
+
+  if (!hasConfig) {
     console.log(chalk.yellow("ℹ️  No configuration found. Running initial setup wizard first...\n"));
     config = await runInitWizard(rootDir);
   }
@@ -348,14 +359,19 @@ program
     }
 
     // 1. Check or initialize configuration
-    const configPath = path.join(rootDir, CONFIG_FILE_NAME);
-    let config = loadConfig(rootDir);
-    let isFirstRun = false;
+    let config = loadConfig(rootDir, options.output);
+    const candidateConfigPaths = [
+      path.join(rootDir, options.output || config.outputDir || "context", CONFIG_FILE_NAME),
+      path.join(rootDir, CONFIG_FILE_NAME)
+    ];
 
-    try {
-      await fs.access(configPath);
-    } catch {
-      isFirstRun = true;
+    let isFirstRun = true;
+    for (const cPath of candidateConfigPaths) {
+      try {
+        await fs.access(cPath);
+        isFirstRun = false;
+        break;
+      } catch {}
     }
 
     if (isFirstRun || options.interactive) {

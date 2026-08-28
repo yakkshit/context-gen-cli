@@ -50,9 +50,12 @@ def execute_generation(
     metadata = extract_metadata(str(target_dir), files)
     graph = build_dependency_graph(files, str(target_dir))
 
-    # Read output directory from .context-gen.json if available
-    config_file = target_dir / ".context-gen.json"
+    # Read output directory from context/.context-gen.json or legacy .context-gen.json
     output_dir_name = "context"
+    config_file = target_dir / "context" / ".context-gen.json"
+    if not config_file.is_file():
+        config_file = target_dir / ".context-gen.json"
+
     if config_file.is_file():
         try:
             with open(config_file, "r", encoding="utf-8") as f:

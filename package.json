@@ -1,6 +1,6 @@
 {
   "name": "context-gen-cli",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "A CLI tool that scans any project, builds a graph-based context model, and generates an agent.md file for LLMs.",
   "type": "module",
   "main": "src/index.js",

@@ -2,14 +2,14 @@
 
 ## Overview
 
-A lightweight npm CLI tool that scans any codebase, constructs a dependency and architectural graph model, and outputs a concise agent.md context file ready to paste into any LLM (ChatGPT, Claude, Gemini, etc.).
+A CLI tool that scans any project, builds a graph-based context model, and generates an agent.md file for LLMs.
 
 
 ## Tech Stack
 
 - JSON
-- Markdown
 - Python
+- Markdown
 - JavaScript
 - Shell Script
 - Express.js
@@ -23,29 +23,19 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
     ├── .vscode/
     │   └── mcp.json
     ├── python/
-    │   ├── .pytest_cache/
-    │   │   ├── v/
-    │   │   │   └── ...
-    │   │   ├── .gitignore
-    │   │   ├── CACHEDIR.TAG
-    │   │   └── README.md
     │   ├── context_gen/
+    │   │   ├── mcp/
+    │   │   │   └── ...
     │   │   ├── __init__.py
     │   │   ├── cli.py
     │   │   ├── extractor.py
     │   │   ├── generator.py
     │   │   ├── graph.py
     │   │   └── scanner.py
-    │   ├── context_gen_cli.egg-info/
-    │   │   ├── dependency_links.txt
-    │   │   ├── entry_points.txt
-    │   │   ├── PKG-INFO
-    │   │   ├── requires.txt
-    │   │   ├── SOURCES.txt
-    │   │   └── top_level.txt
     │   ├── tests/
     │   │   ├── test_fixture/
     │   │   │   └── ...
+    │   │   ├── test_advanced_tools.py
     │   │   └── verify_scanner_graph.py
     │   ├── pyproject.toml
     │   └── README.md
@@ -64,19 +54,6 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
     │   ├── init.js
     │   ├── scanner.js
     │   └── security.js
-    ├── test/
-    │   └── fixture/
-    │       ├── .vscode/
-    │       │   └── ...
-    │       ├── src/
-    │       │   └── ...
-    │       ├── .gitignore
-    │       ├── main.py
-    │       ├── math_helper.py
-    │       ├── package.json
-    │       ├── README-ALT.md
-    │       ├── README.md
-    │       └── requirements.txt
     ├── .gitignore
     ├── .npmignore
     ├── LICENSE
@@ -88,7 +65,6 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 
 ## Key Files
 
-- **`python/.pytest_cache/README.md`**: Project documentation and overview.
 - **`python/tests/test_fixture/main.py`**: Main application entry point.
 - **`python/README.md`**: Project documentation and overview.
 - **`src/mcp/auth.js`**: Ensures security files (.env, .env.*, .context-gen-key, mcp.md) are in .gitignore.
@@ -103,6 +79,7 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 - **`src/index.js`**: Scans a project, builds an architecture & dependency graph model,.
 - **`src/init.js`**: Displays the ASCII art welcome banner.
 - **`src/scanner.js`**: Source module.
+- **`package.json`**: Project manifest, metadata, dependencies, and script definitions.
 
 
 ## Dependencies
@@ -126,8 +103,8 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 ## Entry Points
 
 - **main**: `src/index.js`
-- **bin (context-gen-cli)**: `src/index.js`
-- **bin (context-gen)**: `src/index.js`
+- **bin (context-gen-cli)**: `./src/index.js`
+- **bin (ctx)**: `./src/index.js`
 - **scripts.start**: `node src/index.js`
 
 
@@ -135,9 +112,7 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 
 ### Entry Points
 - `src/index.js` (main entry)
-- `test/fixture/src/index.js` (main entry)
 - `python/tests/test_fixture/main.py` (main entry)
-- `test/fixture/main.py` (main entry)
 
 ### Core Modules
 - `src/mcp/server.js` (imported by 1 file)
@@ -148,8 +123,6 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 - `src/graph.js` (imported by 3 files)
 - `src/init.js` (imported by 1 file)
 - `src/scanner.js` (imported by 3 files)
-- `test/fixture/src/components/App.js` (imported by 1 file)
-- `test/fixture/src/utils/math.js` (imported by 2 files)
 
 ### Utilities
 - `src/config.js` (shared helper)
@@ -157,9 +130,7 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 - `src/generator.js` (shared helper)
 - `src/graph.js` (shared helper)
 - `src/scanner.js` (shared helper)
-- `test/fixture/src/utils/math.js` (shared helper)
 - `python/tests/test_fixture/utils.py` (shared helper)
-- `test/fixture/math_helper.py` (shared helper)
 
 ### Key Relationships
 - `python/tests/test_fixture/main.py` → `python/tests/test_fixture/utils.py`
@@ -172,6 +143,14 @@ A lightweight npm CLI tool that scans any codebase, constructs a dependency and 
 - `src/mcp/server.js` → `src/graph.js`
 - `src/mcp/server.js` → `src/generator.js`
 - `src/mcp/tools.js` → `src/scanner.js`
+
+
+## Recent Git Commits
+
+- `f888dde`: Bump Python version to 1.2.4 and automate version bumping in publish.sh (13 minutes ago by yakkshit)
+- `9d58e5d`: Fix ENOENT when saving config and add update/generate commands (21 minutes ago by yakkshit)
+- `8e4e538`: Fix explain_architecture node attribute lookup and deprecation warnings (29 minutes ago by yakkshit)
+- `e175c16`: first commit (2 hours ago by yakkshit)
 
 
 ## Quick Notes for the LLM
