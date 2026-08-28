@@ -23,33 +23,38 @@ import { runInitWizard } from "./init.js";
 
 export function showUsageGuideText() {
   return `=======================================================
-✨ context-gen-cli — AI Project Context Generator
+✨ context-gen-cli (ctx) — AI Project Context Generator
 =======================================================
 
 📖 HOW TO USE:
 
-1️⃣  ⚡ All-In-One Default Mode (Generate + Live MCP Server + Auto-sync Watcher)
-    $ context-gen-cli -d
+1️⃣  ⚡ All-In-One Mode (Generate + Live MCP Server + Auto-sync Watcher)
+    $ ctx -d              (or ctx --default)
 
 2️⃣  Generate All Context Formats (agent.md, agent.json, agent.yaml)
-    $ context-gen-cli [path]
+    $ ctx                 (or ctx [path])
+    $ ctx update          (quick refresh)
 
-3️⃣  Run Setup Wizard (Configure folders, security, output location)
-    $ context-gen-cli init
+3️⃣  Start MCP Server for Cursor / Claude / Antigravity / VS Code
+    $ ctx -m              (interactive 1-step setup)
+    $ ctx serve --public  (shareable temporary URL)
 
 4️⃣  Keep Context Fresh (Auto-updates on file save)
-    $ context-gen-cli --watch
+    $ ctx -w              (or ctx --watch)
 
-5️⃣  Start MCP Server (Interactive 1-step setup + live context)
-    $ context-gen-cli --mcp
+5️⃣  Custom Formats & Folders
+    $ ctx -f json         (formats: md, json, yaml, all)
+    $ ctx -o docs/ctx     (custom output destination)
+    $ ctx -p ./subapp     (analyze specific project folder)
 
-6️⃣  Start Public MCP Server (Shareable temporary URL)
-    $ context-gen-cli serve --public
+6️⃣  Run Setup Wizard
+    $ ctx init
 
-💡 TIPS:
-- Output folder defaults to context/ in project root.
+💡 PRO-TIPS:
+- Command alias 'ctx' works everywhere (npm / pip).
+- Everything (agent.md, agent.json, agent.yaml, .context-gen.json) stays neatly inside context/.
 - Security scanner automatically strips .env, keys, and credentials.
-- Check the generated mcp.md file for AI client setup instructions.
+- Check context/mcp.md for 1-click AI client configuration.
 =======================================================`;
 }
 
@@ -473,10 +478,13 @@ program
             console.log(chalk.bold.red("🔐 Security:") + chalk.yellow(` ${secCount} sensitive files protected and excluded.`));
           }
           console.log("");
-          console.log(chalk.bold("💡 Next steps:"));
-          console.log(chalk.gray("  • Run ") + chalk.cyan("context-gen-cli --mcp") + chalk.gray(" to start your live MCP server"));
-          console.log(chalk.gray("  • Run ") + chalk.cyan("context-gen-cli --watch") + chalk.gray(" to auto-update on file changes"));
-          console.log(chalk.gray("  • Edit ") + chalk.cyan(".context-gen.json") + chalk.gray(" to customize ignore & security rules"));
+          console.log(chalk.bold("💡 Pro-Tips & Next Steps:"));
+          console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -m") + chalk.gray(" (or ") + chalk.cyan("ctx --mcp") + chalk.gray(")          → Start interactive live MCP server for AI clients"));
+          console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -w") + chalk.gray(" (or ") + chalk.cyan("ctx --watch") + chalk.gray(")        → Keep context fresh (auto-syncs on file save)"));
+          console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -d") + chalk.gray(" (or ") + chalk.cyan("ctx --default") + chalk.gray(")      → ⚡ All-in-one (generate + live MCP + watcher)"));
+          console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx update -f json") + chalk.gray(" (or ") + chalk.cyan("-f yaml / md") + chalk.gray(") → Quick format change or regenerate"));
+          console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -o <dir>") + chalk.gray(" (or ") + chalk.cyan("-p <path>") + chalk.gray(")          → Custom output folder or project target"));
+          console.log(chalk.gray("  • ") + chalk.gray("Config saved in: ") + chalk.yellow(`${outputDir}/.context-gen.json`));
           console.log("");
         }
       } catch (err) {

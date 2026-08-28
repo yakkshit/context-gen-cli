@@ -1,4 +1,4 @@
-# ⚡ context-gen-cli (Python Edition)
+# ⚡ context-gen-cli (`ctx`) — Python Edition
 
 [![PyPI version](https://img.shields.io/pypi/v/context-gen-cli.svg?color=3775a9)](https://pypi.org/project/context-gen-cli/)
 [![Python Versions](https://img.shields.io/pypi/pyversions/context-gen-cli.svg)](https://pypi.org/project/context-gen-cli/)
@@ -10,13 +10,14 @@
 
 ## 🌟 Highlights
 
-- **100% Accurate Python Dependency Graphs**: Built using Python's native `ast` (Abstract Syntax Tree) module to resolve imports, relative packages, entry points, and utilities without regex guesswork.
+- **⚡ Short Command Alias (`ctx`)**: Type `ctx` anywhere in your terminal.
+- **100% Accurate Python Dependency Graphs**: Built using Python's native `ast` (Abstract Syntax Tree) module to resolve imports, relative packages, entry points, and utilities.
+- **📁 Clean Workspace Storage**: Everything (`agent.md`, `agent.json`, `agent.yaml`, `.context-gen.json`) is saved neatly inside `context/`.
 - **⚡ All-In-One Default Mode (`-d`)**: Auto-generates triple context formats in `context/` and runs a live auto-sync watcher in the background.
 - **`.gitignore` & Multi-Ignore Respect**: Automatically parses rules from `.gitignore`, `.npmignore`, `.dockerignore`, `.contextignore`, `.ignore`, and filters `.env*` secrets.
 - **Triple Format Output**: Generates Markdown (`agent.md`), MCP-compatible structured JSON (`agent.json`), and clean YAML (`agent.yaml`).
 - **🔄 Auto-Sync Watch Mode (`-w`)**: Monitors workspace changes and updates context files automatically on save.
-- **Configuration Parity**: Seamlessly reads `.context-gen.json` if present to maintain unified project settings with the Node.js edition.
-- **Modern CLI**: Styled with `typer` and `rich` for rich terminal output and progress reporting.
+- **Configuration Parity**: Seamlessly reads `context/.context-gen.json` to maintain unified project settings with the Node.js edition.
 
 ---
 
@@ -36,75 +37,52 @@ pip install context-gen-cli
 Generates all formats in `context/` and starts the live auto-sync watcher in background:
 
 ```bash
-context-gen -d
+ctx -d
 ```
 
 ### 2. Generate All Formats (Markdown, JSON, YAML)
 Scans the current directory and outputs `agent.md`, `agent.json`, and `agent.yaml` in `context/`:
 
 ```bash
-context-gen .
+ctx
 ```
 
-### 3. Generate Specific Format (JSON / MD / YAML)
-Generate only the format you need:
-
+### 3. Quick Refresh / Regenerate
 ```bash
-# Generate MCP-ready JSON
-context-gen . --format json
-
-# Generate Markdown
-context-gen . --format md
-
-# Generate YAML
-context-gen . --format yaml
+ctx update
 ```
 
-### 4. Watch Mode
+### 4. Custom Format & Output Destination
+```bash
+ctx update -f json
+ctx -o custom_docs/
+ctx -p /path/to/project
+```
+
+### 5. Watch Mode
 Keep context files fresh automatically on every file edit:
 
 ```bash
-context-gen . --watch
-```
-
-### 5. Custom Output Destination & Directory Depth
-```bash
-context-gen ./my-project -o custom/docs/context.md --max-depth 4
+ctx -w
 ```
 
 ---
 
 ## 📖 CLI Reference
 
-```text
-Usage: context-gen [OPTIONS] [PATH]
-
-Arguments:
-  [PATH]    Target project directory to analyze  [default: .]
-
-Options:
-  -d, --default             ⚡ Zero-config default mode: generate all formats in context/ and run live auto-sync watcher
-  -f, --format [all|md|json|yaml]  Output format [default: all]
-  -o, --output PATH         Custom output file path (e.g. context/agent.md or custom.json)
-  -w, --watch               Watch directory and auto-regenerate context on file changes
-  --max-depth INTEGER       Maximum directory depth to scan (1-10) [default: 3]
-  --help                    Show this message and exit
-```
-
----
-
-## 🌐 Node.js & Live MCP Server
-
-Looking for the live MCP server with interactive SSE streaming and public tunnels? Check out the [Node.js edition](https://www.npmjs.com/package/context-gen-cli):
-
-```bash
-npx context-gen-cli -d
-# or
-npx context-gen-cli --mcp
-```
+| Flag / Command | Alias | Description |
+| :--- | :--- | :--- |
+| `ctx -d` | `ctx --default` | **⚡ All-in-One**: Generates context files and starts live auto-sync watcher |
+| `ctx -w` | `ctx --watch` | **👀 Watch Mode**: Auto-regenerates context on file changes |
+| `ctx -f <type>` | `ctx --format <type>` | **Format**: `md`, `json`, `yaml`, or `all` |
+| `ctx -o <path>` | `ctx --output <path>` | **Custom Output**: Output file/folder path |
+| `ctx -p <path>` | `ctx --project <path>` | **Target Directory**: Directory to analyze |
+| `ctx update` | — | **Refresh**: Regenerate context files |
+| `ctx --help` | — | View full help options |
 
 ---
 
 ## 📄 License
 
 MIT © [yakkshit](https://github.com/yakkshit)
+

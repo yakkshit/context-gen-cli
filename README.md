@@ -1,8 +1,8 @@
-# ⚡ context-gen-cli
+# ⚡ context-gen-cli (`ctx`)
 
 [![npm version](https://img.shields.io/npm/v/context-gen-cli.svg?color=cb3837)](https://www.npmjs.com/package/context-gen-cli)
+[![PyPI version](https://img.shields.io/pypi/v/context-gen-cli.svg?color=3775a9)](https://pypi.org/project/context-gen-cli/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
-[![Node Version](https://img.shields.io/node/v/context-gen-cli.svg)](https://nodejs.org)
 [![MCP Ready](https://img.shields.io/badge/MCP-Protocol%20Ready-6366f1.svg)](https://modelcontextprotocol.io)
 
 > 🚀 **The ultimate AI project context generator and live Model Context Protocol (MCP) server.**  
@@ -12,75 +12,92 @@
 
 ## 🌟 Key Features
 
-- **⚡ Zero-Config Context Generation**: Generates clean, structured architectural models in Markdown, JSON, or YAML.
-- **🔌 One-Command MCP Server (`--mcp`)**: Instantly boots a local or public MCP server with API key authentication for any IDE.
+- **⚡ Short Command Alias (`ctx`)**: Type `ctx` instead of the full package name.
+- **📁 Clean Workspace Storage**: Everything (`agent.md`, `agent.json`, `agent.yaml`, `mcp.md`, `.context-gen.json`) is neatly stored inside `context/`.
+- **🔌 One-Command MCP Server (`-m`, `--mcp`)**: Instantly boots a local or public MCP server with API key authentication for any AI IDE.
 - **🌐 Built-in Multi-Tunneling**: Share live project context with remote LLMs using free native SSH tunnels (`localhost.run`, `serveo.net`) or token-based providers (`ngrok`, `cloudflare`).
 - **🛡️ Intelligent Security & Ignore Filters**: Automatically loads and respects `.gitignore`, `.npmignore`, `.dockerignore`, `.env*` files, SSH keys, certificates, and custom secret patterns.
 - **🕸️ Dependency & Architecture Graph**: Maps entry points, core utilities, and file relationships.
-- **🖥️ Glassmorphic Live Dashboard UI**: View context files, test MCP tools interactively, and copy 1-click configs at `http://localhost:3456/`.
-- **🔄 Auto-Sync Watch Mode (`--watch`)**: Keeps context models updated automatically on every file save.
+- **🔄 Auto-Sync Watch Mode (`-w`, `--watch`)**: Keeps context models updated automatically on every file save.
+- **⚡ All-in-One Mode (`-d`, `--default`)**: Generates context, boots MCP server, and runs background auto-sync watcher in one command.
 
 ---
 
-## 📦 Quick Start
+## 📦 Installation & Quick Start
 
-### 1. Run without installing (Recommended)
-
-```bash
-# ⚡ All-In-One Local (Default context + Live MCP Server + Auto-sync Watcher)
-npx context-gen-cli -d
-
-# 🌐 All-In-One Public (Shareable tunnel URL for remote AI agents + Auto-sync)
-npx context-gen-cli -d --public
-
-# Interactive 1-step setup + boot live MCP server
-npx context-gen-cli --mcp
-
-# Generate agent.md in context/ directory
-npx context-gen-cli
-```
-
-### 2. Install globally
+### 1. Global Installation (Recommended)
 
 ```bash
+# Node.js (npm)
 npm install -g context-gen-cli
 
-# Run all-in-one anywhere
-context-gen-cli -d
+# Python (pip)
+pip install context-gen-cli
+```
+
+### 2. Run Anywhere
+
+```bash
+# ⚡ All-In-One Default Mode (Generate + Live MCP Server + Auto-sync Watcher)
+ctx -d
+
+# 🌐 Shareable Public MCP Server (For remote AI assistants)
+ctx -m --public
+# or
+ctx serve --public
+
+# 🚀 Quick scan & context generation
+ctx
+
+# 🔄 Regenerate / Refresh context
+ctx update
+
+# 📋 Change format on the fly
+ctx update -f json      # options: md, json, yaml, all
+
+# 📁 Custom output folder or project target
+ctx -o custom_docs/
+ctx -p /path/to/project
+```
+
+### 3. Run without installing (via `npx`)
+
+```bash
+npx context-gen-cli -d
+# or using alias via npx:
+npx -p context-gen-cli ctx update
 ```
 
 ---
 
-## 📖 Command Guide
+## 📖 Command & Flag Guide
 
-| Command | Description |
-| :--- | :--- |
-| `context-gen-cli -d` | **⚡ All-in-One Local**: Generates context, boots local MCP server, runs live watcher |
-| `context-gen-cli -d --public` | **🌐 All-in-One Public**: Generates context, boots public MCP URL, runs live watcher |
-| `context-gen-cli [path]` | Scan project and generate context files in `context/` |
-| `context-gen-cli --mcp` | **Interactive MCP wizard**: auto-generates `agent.json` & starts server |
-| `context-gen-cli --format json` | Output machine-readable JSON (`context/agent.json`) |
-| `context-gen-cli --format md` | Output structured Markdown (`context/agent.md`) |
-| `context-gen-cli --watch` | Watch mode: auto-regenerates context on file save |
-| `context-gen-cli init` | Interactive setup wizard for folders, security & output location |
-| `context-gen-cli serve` | Start local MCP server directly on port 3456 |
-| `context-gen-cli serve --public` | Start MCP server with public tunnel selection |
-| `context-gen-cli --help` | View full help and next steps guide |
+| Flag / Command | Alias | Description |
+| :--- | :--- | :--- |
+| `ctx -d` | `ctx --default` | **⚡ All-in-One**: Generates context, boots local MCP server, and runs live watcher |
+| `ctx -m` | `ctx --mcp` | **🔌 Interactive MCP Server**: Boots MCP server with 1-click config |
+| `ctx -w` | `ctx --watch` | **👀 Live Watch Mode**: Auto-regenerates context on file changes |
+| `ctx -f <type>` | `ctx --format <type>` | **Format Switcher**: `md`, `json`, `yaml`, or `all` (default: `all`) |
+| `ctx -o <path>` | `ctx --output <path>` | **Custom Destination**: Save output files to a custom folder |
+| `ctx -p <path>` | `ctx --project <path>` | **Target Directory**: Project directory to analyze |
+| `ctx -i` | `ctx --interactive` | **Interactive Setup**: Run configuration setup wizard |
+| `ctx update` | `ctx generate` | **Refresh**: Regenerate context files in `context/` |
+| `ctx init` | — | **Wizard**: Configure ignore rules, security filters, and output paths |
+| `ctx serve --public` | — | **🌐 Public URL**: Expose MCP server via secure tunnel for remote agents |
 
 ---
 
-## 🔌 Using as an MCP Server
+## 🔌 Using with AI Agents & IDEs (MCP)
 
-When running `context-gen-cli --mcp` (or `context-gen-cli serve`), the tool provides standard MCP tools to AI assistants:
-
-- `get_context`: Returns the full structured project context model.
+When running `ctx -m` or `ctx serve`, `context-gen-cli` provides standard MCP tools:
+- `get_context`: Returns structured project context JSON for LLM reasoning.
 - `scan_project`: Triggers a live rescan of the codebase.
-- `list_tools_info`: Returns available MCP tool descriptions and capabilities.
+- `list_tools_info`: Returns descriptions of all available MCP tools.
 
-### 📋 IDE Setup Examples
+### 📋 IDE Configuration Examples
 
 #### Cursor / Claude Desktop / Antigravity
-Add to your MCP configuration (`claude_desktop_config.json` or Cursor MCP settings):
+Add to your MCP settings file (`mcp_config.json` or `.cursor/mcp.json`):
 
 ```json
 {
@@ -88,7 +105,7 @@ Add to your MCP configuration (`claude_desktop_config.json` or Cursor MCP settin
     "context-gen": {
       "url": "http://localhost:3456/mcp",
       "headers": {
-        "X-API-Key": "YOUR_API_KEY_FROM_DOTENV"
+        "X-API-Key": "YOUR_API_KEY"
       }
     }
   }
@@ -103,7 +120,7 @@ Add to your MCP configuration (`claude_desktop_config.json` or Cursor MCP settin
       "type": "sse",
       "url": "http://localhost:3456/sse",
       "headers": {
-        "X-API-Key": "YOUR_API_KEY_FROM_DOTENV"
+        "X-API-Key": "YOUR_API_KEY"
       }
     }
   }
@@ -114,27 +131,29 @@ Add to your MCP configuration (`claude_desktop_config.json` or Cursor MCP settin
 
 ## 🛡️ Security & Privacy
 
-Your code's security is guaranteed:
-1. **Zero Secret Leakage**: Sensitive files (`.env`, `.pem`, `.key`, `id_rsa*`, credentials folders) are automatically detected and omitted from context files.
+1. **Zero Secret Leakage**: Sensitive files (`.env`, `.pem`, `.key`, `id_rsa*`, credentials folders) are automatically excluded.
 2. **Auto-Ignore Engine**: All patterns in `.gitignore`, `.npmignore`, `.dockerignore`, and `.contextignore` are automatically enforced.
-3. **API Key Protected**: All MCP server endpoints (`/mcp`, `/sse`, `/tools/call`) require API key authentication (auto-saved to project `.env`).
+3. **API Key Protected**: All MCP server endpoints require API key authentication (auto-saved to project `.env`).
 
 ---
 
-## 🐍 Python Edition
+## 🐍 Python & Node.js Feature Parity
 
-Prefer Python? `context-gen-cli` is also available as a standalone Python package powered by native Python AST:
+`context-gen-cli` is available for both **Node.js** and **Python** with identical flag support and output formats:
 
 ```bash
-pip install context-gen-cli
+# Node.js
+npm install -g context-gen-cli
+ctx -d
 
-# Run Python CLI
-context-gen . --format json
+# Python
+pip install context-gen-cli
+ctx -d
 ```
-See the [Python README](./python/README.md) for details.
 
 ---
 
 ## 📄 License
 
 MIT © [yakkshit](https://github.com/yakkshit)
+

@@ -282,8 +282,50 @@ def main(
         )
     )
 
+    tips = (
+        "[bold cyan]ctx -w[/bold cyan] (or [cyan]ctx --watch[/cyan])        → Keep context fresh (auto-syncs on save)\n"
+        "[bold cyan]ctx -d[/bold cyan] (or [cyan]ctx --default[/cyan])      → ⚡ All-in-one (generate + live watcher)\n"
+        "[bold cyan]ctx update -f json[/bold cyan]            → Quick format change (md, json, yaml, all)\n"
+        "[bold cyan]ctx -o <dir>[/bold cyan]                  → Custom output folder\n"
+        f"[dim]Config saved in:[/dim] [yellow]{res['output_dir'] / '.context-gen.json'}[/yellow]"
+    )
+    console.print(Panel(tips, title="[bold]💡 Pro-Tips & Next Steps[/bold]", border_style="blue"))
+
     if watch:
         run_watch_loop(target_dir, format, max_depth=max_depth)
+
+
+@app.command()
+def update(
+    path: Path = typer.Argument(
+        default=Path("."),
+        help="Target project directory to analyze.",
+        file_okay=False,
+        dir_okay=True,
+        readable=True,
+        resolve_path=True,
+    ),
+    format: OutputFormat = typer.Option(
+        OutputFormat.ALL,
+        "--format",
+        "-f",
+        help="Output format: 'all', 'md', 'json', or 'yaml'.",
+        case_sensitive=False,
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Custom output file path.",
+    ),
+) -> None:
+    """
+    Regenerate and update project context files.
+    """
+    target_dir = path.resolve()
+    with console.status("[bold green]Updating project context files...[/bold green]"):
+        res = execute_generation(target_dir, format, output_override=output)
+    console.print(f"[bold green]✓ Context updated in {res['output_dir']}![/bold green]")
 
 
 if __name__ == "__main__":
