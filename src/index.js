@@ -20,6 +20,7 @@ import { buildDependencyGraph } from "./graph.js";
 import { generateAgentMd, generateAgentJson, generateAgentYaml } from "./generator.js";
 import { loadConfig, getDefaultConfig, saveConfig, CONFIG_FILE_NAME } from "./config.js";
 import { runInitWizard } from "./init.js";
+import { printMainBanner, runAnimatedPipeline, printSummaryCard } from "./ui.js";
 
 export function showUsageGuideText() {
   return `=======================================================
@@ -387,97 +388,98 @@ program
     const outDirPath = path.resolve(rootDir, outputDir);
 
     /**
-     * Executes the scanning and generation pipeline with beautiful ora spinners.
+     * Executes the scanning and generation pipeline with animated progress bars and metrics cards.
      */
     async function executeContextGeneration(watchChangedFile = false) {
       try {
         if (!watchChangedFile) {
-          console.log("");
-          console.log(chalk.bold.hex("#6366f1")("🎨 context-gen-cli — AI Project Context Generator"));
-          console.log("");
+          printMainBanner();
         } else {
           console.log(chalk.cyan(`\n🔄 Change detected: ${watchChangedFile}. Regenerating context...`));
         }
 
-        // Step 1: Scan project files
-        const scanSpinner = ora({ text: chalk.blue("Scanning project files..."), color: "cyan" }).start();
-        const { files, tree, sensitiveFiles, securityReasons } = await scanProject(rootDir, 3, [], config);
-        await new Promise((r) => setTimeout(r, 250));
-
-        const secCount = sensitiveFiles ? sensitiveFiles.length : 0;
-        scanSpinner.succeed(
-          chalk.green(
-            `✓ Found ${files.length} files ${secCount > 0 ? chalk.yellow(`(${secCount} excluded for security)`) : ""}`
-          )
-        );
-
-        // Step 2: Build dependency graph
-        const graphSpinner = ora({ text: chalk.blue("Analyzing dependencies & modules..."), color: "magenta" }).start();
-        const metadata = await extractMetadata(rootDir, files);
-        const graph = await buildDependencyGraph(files, rootDir, metadata.pkgJson);
-        await new Promise((r) => setTimeout(r, 250));
-        graphSpinner.succeed(chalk.green(`✓ Mapped ${graph.nodes.length} nodes and ${graph.edges.length} edges`));
-
-        // Step 3: Tech stack detection
-        const stackSpinner = ora({ text: chalk.blue("Detecting tech stack..."), color: "yellow" }).start();
-        const stackList = metadata.stack && metadata.stack.length > 0 ? metadata.stack.join(", ") : "General Codebase";
-        await new Promise((r) => setTimeout(r, 200));
-        stackSpinner.succeed(chalk.green(`✓ Tech stack: ${chalk.bold(stackList)}`));
-
-        // Step 4: Generate context files according to selected formats
-        const genSpinner = ora({ text: chalk.blue("Generating context files..."), color: "cyan" }).start();
-        await fs.mkdir(outDirPath, { recursive: true });
-
+        let scanData = null;
+        let metadata = null;
+        let graph = null;
+        const generatedFiles = [];
         const activeFormats = options.format
-          ? [options.format.toLowerCase()]
+          ? (options.format.toLowerCase() === "all" ? ["md", "json", "yaml"] : [options.format.toLowerCase()])
           : (Array.isArray(config.outputFormats) && config.outputFormats.length > 0
               ? config.outputFormats.map((f) => f.toLowerCase())
-              : ["md", "json"]);
+              : ["md", "json", "yaml"]);
 
-        const generatedFiles = [];
+        await runAnimatedPipeline([
+          {
+            label: "Scanning workspace & filtering security ignores...",
+            weight: 25,
+            run: async () => {
+              scanData = await scanProject(rootDir, 3, [], config);
+              await new Promise((r) => setTimeout(r, 120));
+            }
+          },
+          {
+            label: "Extracting metadata & tech stack signals...",
+            weight: 20,
+            run: async () => {
+              metadata = await extractMetadata(rootDir, scanData.files);
+              await new Promise((r) => setTimeout(r, 100));
+            }
+          },
+          {
+            label: "Constructing AST module dependency graph...",
+            weight: 25,
+            run: async () => {
+              graph = await buildDependencyGraph(scanData.files, rootDir, metadata.pkgJson);
+              await new Promise((r) => setTimeout(r, 120));
+            }
+          },
+          {
+            label: `Generating context artifacts (${activeFormats.join(", ")})...`,
+            weight: 30,
+            run: async () => {
+              await fs.mkdir(outDirPath, { recursive: true });
 
-        if (activeFormats.includes("md")) {
-          const mdContent = generateAgentMd({ tree, metadata, graph });
-          const mdPath = path.join(outDirPath, "agent.md");
-          await fs.writeFile(mdPath, mdContent, "utf-8");
-          const mdTokens = Math.round(mdContent.length / 4);
-          generatedFiles.push({ name: "agent.md", chars: mdContent.length, extra: `~${mdTokens.toLocaleString()} tokens, Markdown` });
-        }
+              if (activeFormats.includes("md") || activeFormats.includes("all")) {
+                const mdContent = generateAgentMd({ tree: scanData.tree, metadata, graph });
+                const mdPath = path.join(outDirPath, "agent.md");
+                await fs.writeFile(mdPath, mdContent, "utf-8");
+                const mdTokens = Math.round(mdContent.length / 4);
+                generatedFiles.push({ name: "agent.md", chars: mdContent.length, extra: `~${mdTokens.toLocaleString()} tokens, Markdown` });
+              }
 
-        if (activeFormats.includes("json")) {
-          const jsonObject = generateAgentJson({ tree, metadata, graph, projectPath: rootDir });
-          const jsonContent = JSON.stringify(jsonObject, null, 2);
-          const jsonPath = path.join(outDirPath, "agent.json");
-          await fs.writeFile(jsonPath, jsonContent, "utf-8");
-          generatedFiles.push({ name: "agent.json", chars: jsonContent.length, extra: "structured JSON" });
-        }
+              if (activeFormats.includes("json") || activeFormats.includes("all")) {
+                const jsonObject = generateAgentJson({ tree: scanData.tree, metadata, graph, projectPath: rootDir });
+                const jsonContent = JSON.stringify(jsonObject, null, 2);
+                const jsonPath = path.join(outDirPath, "agent.json");
+                await fs.writeFile(jsonPath, jsonContent, "utf-8");
+                generatedFiles.push({ name: "agent.json", chars: jsonContent.length, extra: "structured JSON" });
+              }
 
-        if (activeFormats.includes("yaml")) {
-          const yamlContent = generateAgentYaml({ tree, metadata, graph, projectPath: rootDir });
-          const yamlPath = path.join(outDirPath, "agent.yaml");
-          await fs.writeFile(yamlPath, yamlContent, "utf-8");
-          generatedFiles.push({ name: "agent.yaml", chars: yamlContent.length, extra: "clean YAML" });
-        }
+              if (activeFormats.includes("yaml") || activeFormats.includes("all")) {
+                const yamlContent = generateAgentYaml({ tree: scanData.tree, metadata, graph, projectPath: rootDir });
+                const yamlPath = path.join(outDirPath, "agent.yaml");
+                await fs.writeFile(yamlPath, yamlContent, "utf-8");
+                generatedFiles.push({ name: "agent.yaml", chars: yamlContent.length, extra: "clean YAML" });
+              }
+              await new Promise((r) => setTimeout(r, 100));
+            }
+          }
+        ]);
 
-        await new Promise((r) => setTimeout(r, 200));
-        genSpinner.succeed(chalk.green(`✓ Generated context files in ${chalk.bold(outputDir + "/")}:`));
-
-        for (const gf of generatedFiles) {
-          console.log(chalk.cyan(`  • ${gf.name} (${gf.chars.toLocaleString()} chars, ${gf.extra})`));
-        }
+        const secCount = scanData.sensitiveFiles ? scanData.sensitiveFiles.length : 0;
 
         // Step 5: Summary Card
         if (!watchChangedFile) {
-          console.log("");
-          console.log(chalk.bold.green("╔════════════════════════════════════════════════════════╗"));
-          console.log(chalk.bold.green("║   ✨ Context Generation Complete!                      ║"));
-          console.log(chalk.bold.green("╚════════════════════════════════════════════════════════╝"));
-          console.log("");
-          console.log(chalk.bold("📁 Output destination:") + ` ${chalk.yellow(outputDir + "/")}`);
-          if (secCount > 0) {
-            console.log(chalk.bold.red("🔐 Security:") + chalk.yellow(` ${secCount} sensitive files protected and excluded.`));
-          }
-          console.log("");
+          printSummaryCard({
+            filesCount: scanData.files.length,
+            secCount,
+            nodesCount: graph.nodes.length,
+            edgesCount: graph.edges.length,
+            techStack: metadata.stack || [],
+            outputDir,
+            generatedFiles
+          });
+
           console.log(chalk.bold("💡 Pro-Tips & Next Steps:"));
           console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -m") + chalk.gray(" (or ") + chalk.cyan("ctx --mcp") + chalk.gray(")          → Start interactive live MCP server for AI clients"));
           console.log(chalk.gray("  • ") + chalk.bold.cyan("ctx -w") + chalk.gray(" (or ") + chalk.cyan("ctx --watch") + chalk.gray(")        → Keep context fresh (auto-syncs on file save)"));
@@ -568,35 +570,69 @@ program
     const outDirPath = path.resolve(rootDir, outputDir);
     await fs.mkdir(outDirPath, { recursive: true });
 
-    const scanSpinner = ora({ text: chalk.blue("Scanning project files..."), color: "cyan" }).start();
-    const { files, tree, sensitiveFiles } = await scanProject(rootDir, 3, [], config);
-    scanSpinner.succeed(chalk.green(`✓ Found ${files.length} files`));
-
-    const graphSpinner = ora({ text: chalk.blue("Analyzing dependencies & modules..."), color: "magenta" }).start();
-    const metadata = await extractMetadata(rootDir, files);
-    const graph = await buildDependencyGraph(files, rootDir, metadata.pkgJson);
-    graphSpinner.succeed(chalk.green(`✓ Mapped ${graph.nodes.length} nodes and ${graph.edges.length} edges`));
-
-    const genSpinner = ora({ text: chalk.blue("Generating context files..."), color: "cyan" }).start();
+    let scanData = null;
+    let metadata = null;
+    let graph = null;
+    const generatedFiles = [];
     const activeFormats = options.format
-      ? [options.format.toLowerCase()]
+      ? (options.format.toLowerCase() === "all" ? ["md", "json", "yaml"] : [options.format.toLowerCase()])
       : (Array.isArray(config.outputFormats) && config.outputFormats.length > 0
           ? config.outputFormats.map((f) => f.toLowerCase())
           : ["md", "json", "yaml"]);
 
-    if (activeFormats.includes("md") || activeFormats.includes("all")) {
-      const mdContent = generateAgentMd({ tree, metadata, graph });
-      await fs.writeFile(path.join(outDirPath, "agent.md"), mdContent, "utf-8");
-    }
-    if (activeFormats.includes("json") || activeFormats.includes("all")) {
-      const jsonObject = generateAgentJson({ tree, metadata, graph, projectPath: rootDir });
-      await fs.writeFile(path.join(outDirPath, "agent.json"), JSON.stringify(jsonObject, null, 2), "utf-8");
-    }
-    if (activeFormats.includes("yaml") || activeFormats.includes("all")) {
-      const yamlContent = generateAgentYaml({ tree, metadata, graph, projectPath: rootDir });
-      await fs.writeFile(path.join(outDirPath, "agent.yaml"), yamlContent, "utf-8");
-    }
-    genSpinner.succeed(chalk.green(`✓ Context updated in ${chalk.bold(outputDir + "/")}`));
+    await runAnimatedPipeline([
+      {
+        label: "Scanning project files & security rules...",
+        weight: 30,
+        run: async () => {
+          scanData = await scanProject(rootDir, 3, [], config);
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      },
+      {
+        label: "Analyzing dependencies & module relationships...",
+        weight: 35,
+        run: async () => {
+          metadata = await extractMetadata(rootDir, scanData.files);
+          graph = await buildDependencyGraph(scanData.files, rootDir, metadata.pkgJson);
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      },
+      {
+        label: `Updating context files in ${outputDir}/...`,
+        weight: 35,
+        run: async () => {
+          if (activeFormats.includes("md") || activeFormats.includes("all")) {
+            const mdContent = generateAgentMd({ tree: scanData.tree, metadata, graph });
+            await fs.writeFile(path.join(outDirPath, "agent.md"), mdContent, "utf-8");
+            const mdTokens = Math.round(mdContent.length / 4);
+            generatedFiles.push({ name: "agent.md", chars: mdContent.length, extra: `~${mdTokens.toLocaleString()} tokens, Markdown` });
+          }
+          if (activeFormats.includes("json") || activeFormats.includes("all")) {
+            const jsonObject = generateAgentJson({ tree: scanData.tree, metadata, graph, projectPath: rootDir });
+            const jsonContent = JSON.stringify(jsonObject, null, 2);
+            await fs.writeFile(path.join(outDirPath, "agent.json"), jsonContent, "utf-8");
+            generatedFiles.push({ name: "agent.json", chars: jsonContent.length, extra: "structured JSON" });
+          }
+          if (activeFormats.includes("yaml") || activeFormats.includes("all")) {
+            const yamlContent = generateAgentYaml({ tree: scanData.tree, metadata, graph, projectPath: rootDir });
+            await fs.writeFile(path.join(outDirPath, "agent.yaml"), yamlContent, "utf-8");
+            generatedFiles.push({ name: "agent.yaml", chars: yamlContent.length, extra: "clean YAML" });
+          }
+          await new Promise((r) => setTimeout(r, 100));
+        }
+      }
+    ]);
+
+    printSummaryCard({
+      filesCount: scanData.files.length,
+      secCount: scanData.sensitiveFiles ? scanData.sensitiveFiles.length : 0,
+      nodesCount: graph.nodes.length,
+      edgesCount: graph.edges.length,
+      techStack: metadata.stack || [],
+      outputDir,
+      generatedFiles
+    });
   });
 
 program

@@ -12,6 +12,8 @@ import typer
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.progress import Progress, SpinnerColumn, TextColumn, BarColumn, TaskProgressColumn, TimeElapsedColumn
+from rich.text import Text
 
 from context_gen.scanner import scan_project
 from context_gen.extractor import extract_metadata
@@ -235,6 +237,189 @@ def main(
     target_dir = (project or path).resolve()
 
     # If -d / --default is supplied, generate all formats and keep watch running
+def print_python_banner():
+    """Renders a stylish ASCII gradient banner in Python CLI."""
+    banner = """
+   ___ _   _  __
+  / __| |_ \ \/ /
+ | (__|  _| >  < 
+  \___|\__|/_/\_\
+"""
+    console.print(f"[bold magenta]{banner}[/bold magenta]")
+    console.print(Panel.fit("[bold cyan]⚡ context-gen-cli (ctx)[/bold cyan] — [magenta]AST AI Project Context Generator[/magenta]", border_style="cyan"))
+    console.print("")
+
+
+def execute_generation_with_progress(
+    target_dir: Path,
+    format_choice: OutputFormat,
+    output_override: Optional[Path] = None,
+    max_depth: int = 3
+) -> dict:
+    """Executes the pipeline with rich progress bar animation."""
+    with Progress(
+        SpinnerColumn("dots", style="cyan"),
+        TextColumn("[bold blue]{task.description}"),
+        BarColumn(bar_width=35, complete_style="magenta", finished_style="green"),
+        TaskProgressColumn(),
+        TimeElapsedColumn(),
+        console=console
+    ) as progress:
+        t1 = progress.add_task("🔍 Scanning workspace files & security ignores...", total=100)
+        scan_result = scan_project(str(target_dir), max_depth=max_depth)
+        time.sleep(0.08)
+        progress.update(t1, completed=100)
+
+        t2 = progress.add_task("📦 Extracting metadata & tech stack signals...", total=100)
+        files = scan_result["files"]
+        tree = scan_result["tree"]
+        metadata = extract_metadata(str(target_dir), files)
+        time.sleep(0.08)
+        progress.update(t2, completed=100)
+
+        t3 = progress.add_task("🕸️  Parsing AST module dependency graph...", total=100)
+        graph = build_dependency_graph(files, str(target_dir))
+        time.sleep(0.08)
+        progress.update(t3, completed=100)
+
+        t4 = progress.add_task(f"✍️  Generating context artifacts ({format_choice.value})...", total=100)
+
+        output_dir_name = "context"
+        config_file = target_dir / "context" / ".context-gen.json"
+        if not config_file.is_file():
+            config_file = target_dir / ".context-gen.json"
+
+        if config_file.is_file():
+            try:
+                with open(config_file, "r", encoding="utf-8") as f:
+                    cfg = json.load(f)
+                    output_dir_name = cfg.get("outputDir", "context")
+            except Exception:
+                pass
+
+        dest_dir = target_dir / output_dir_name
+        dest_dir.mkdir(parents=True, exist_ok=True)
+        generated_files: List[Path] = []
+
+        if output_override:
+            out_file = output_override.resolve()
+            out_file.parent.mkdir(parents=True, exist_ok=True)
+            if format_choice == OutputFormat.JSON:
+                json_data = generate_agent_json(metadata, graph, tree, str(target_dir))
+                out_file.write_text(json.dumps(json_data, indent=2), encoding="utf-8")
+            elif format_choice == OutputFormat.YAML:
+                yaml_text = generate_agent_yaml(metadata, graph, tree, str(target_dir))
+                out_file.write_text(yaml_text, encoding="utf-8")
+            else:
+                md_text = generate_agent_md(metadata, graph, tree)
+                out_file.write_text(md_text, encoding="utf-8")
+            generated_files.append(out_file)
+        else:
+            formats_to_build = ["md", "json", "yaml"] if format_choice == OutputFormat.ALL else [format_choice.value]
+
+            if "md" in formats_to_build:
+                md_file = dest_dir / "agent.md"
+                md_text = generate_agent_md(metadata, graph, tree)
+                md_file.write_text(md_text, encoding="utf-8")
+                generated_files.append(md_file)
+
+            if "json" in formats_to_build:
+                json_file = dest_dir / "agent.json"
+                json_data = generate_agent_json(metadata, graph, tree, str(target_dir))
+                json_file.write_text(json.dumps(json_data, indent=2), encoding="utf-8")
+                generated_files.append(json_file)
+
+            if "yaml" in formats_to_build:
+                yaml_file = dest_dir / "agent.yaml"
+                yaml_text = generate_agent_yaml(metadata, graph, tree, str(target_dir))
+                yaml_file.write_text(yaml_text, encoding="utf-8")
+                generated_files.append(yaml_file)
+
+        time.sleep(0.08)
+        progress.update(t4, completed=100)
+
+    console.print("")
+    return {
+        "files": files,
+        "graph": graph,
+        "metadata": metadata,
+        "generated_files": generated_files,
+        "output_dir": dest_dir
+    }
+
+
+@app.command()
+def main(
+    path: Path = typer.Argument(
+        default=Path("."),
+        help="Target project directory to analyze.",
+        file_okay=False,
+        dir_okay=True,
+        readable=True,
+        resolve_path=True,
+    ),
+    project: Optional[Path] = typer.Option(
+        None,
+        "--project",
+        "-p",
+        help="Target project directory to analyze.",
+        file_okay=False,
+        dir_okay=True,
+        readable=True,
+        resolve_path=True,
+    ),
+    default_mode: bool = typer.Option(
+        False,
+        "--default",
+        "-d",
+        help="⚡ Zero-config default mode: generate all formats in context/ and run live auto-sync watcher.",
+    ),
+    format: OutputFormat = typer.Option(
+        OutputFormat.ALL,
+        "--format",
+        "-f",
+        help="Output format: 'all', 'md', 'json', or 'yaml'.",
+        case_sensitive=False,
+    ),
+    mcp: bool = typer.Option(
+        False,
+        "--mcp",
+        "-m",
+        help="Start MCP server mode.",
+    ),
+    interactive: bool = typer.Option(
+        False,
+        "--interactive",
+        "-i",
+        help="Run in interactive mode.",
+    ),
+    output: Optional[Path] = typer.Option(
+        None,
+        "--output",
+        "-o",
+        help="Custom output file path (e.g. context/agent.md or custom.json).",
+    ),
+    watch: bool = typer.Option(
+        False,
+        "--watch",
+        "-w",
+        help="Watch directory and auto-regenerate context on file changes.",
+    ),
+    max_depth: int = typer.Option(
+        3,
+        "--max-depth",
+        help="Maximum directory depth to scan.",
+        min=1,
+        max=10,
+    ),
+) -> None:
+    """
+    Scan a project, build an AST-powered dependency graph, and generate LLM context.
+    """
+    target_dir = (project or path).resolve()
+    print_python_banner()
+
+    # If -d / --default is supplied, generate all formats and keep watch running
     if default_mode:
         console.print(
             Panel.fit(
@@ -244,7 +429,7 @@ def main(
                 border_style="cyan"
             )
         )
-        res = execute_generation(target_dir, OutputFormat.ALL, max_depth=max_depth)
+        res = execute_generation_with_progress(target_dir, OutputFormat.ALL, max_depth=max_depth)
         table = Table(show_header=False, box=None)
         table.add_row("[bold]Scanned Files:[/bold]", f"[cyan]{len(res['files'])}[/cyan]")
         table.add_row("[bold]AST Graph Edges:[/bold]", f"[cyan]{len(res['graph']['edges'])}[/cyan]")
@@ -254,17 +439,7 @@ def main(
         run_watch_loop(target_dir, OutputFormat.ALL, max_depth=max_depth)
         return
 
-    console.print(
-        Panel.fit(
-            f"[bold cyan]⚡ context-gen-cli (Python Edition)[/bold cyan]\n"
-            f"[dim]Analyzing target:[/dim] [green]{target_dir}[/green]\n"
-            f"[dim]Format:[/dim] [yellow]{format.value.upper()}[/yellow]",
-            border_style="cyan"
-        )
-    )
-
-    with console.status("[bold green]Scanning directory and parsing AST graph...[/bold green]"):
-        res = execute_generation(target_dir, format, output_override=output, max_depth=max_depth)
+    res = execute_generation_with_progress(target_dir, format, output_override=output, max_depth=max_depth)
 
     # Display completion summary
     table = Table(show_header=False, box=None)
