@@ -72,7 +72,7 @@ def load_gitignore(root: Path) -> pathspec.PathSpec:
             except Exception:
                 pass
 
-    return pathspec.PathSpec.from_lines("gitwildmatch", patterns)
+    return pathspec.PathSpec.from_lines("gitignore", patterns)
 
 
 def generate_tree(root: Path, spec: pathspec.PathSpec, max_depth: int = 3) -> str:

@@ -392,8 +392,10 @@ def explain_architecture(
     nodes = graph.get("nodes", [])
     edges = graph.get("edges", [])
 
-    entry_points = [n["id"] for n in nodes if n.get("isEntry")]
-    util_nodes = [n["id"] for n in nodes if n.get("type") == "util" or "util" in n["id"].lower()]
+    entry_points = graph.get("entryPoints") or [n.get("file") or n.get("id") for n in nodes if n.get("type") == "entry" or n.get("isEntry")]
+    util_nodes = graph.get("utilities") or [n.get("file") or n.get("id") for n in nodes if n.get("type") == "util" or "util" in (n.get("file") or n.get("id") or "").lower()]
+    entry_points = [e for e in entry_points if e]
+    util_nodes = [u for u in util_nodes if u]
 
     diagram = ""
 
@@ -417,9 +419,12 @@ def explain_architecture(
         # Generate Mermaid diagram snippet
         mermaid_lines = ["graph TD"]
         for edge in edges[:25]:
-            src = Path(edge["source"]).name.replace(".", "_")
-            tgt = Path(edge["target"]).name.replace(".", "_")
-            mermaid_lines.append(f"  {src} --> {tgt}")
+            src_val = edge.get("from") or edge.get("source") or ""
+            tgt_val = edge.get("to") or edge.get("target") or ""
+            src = Path(src_val).name.replace(".", "_")
+            tgt = Path(tgt_val).name.replace(".", "_")
+            if src and tgt:
+                mermaid_lines.append(f"  {src} --> {tgt}")
 
         diagram = "\n".join(mermaid_lines)
         summary = (
