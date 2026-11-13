@@ -132,6 +132,26 @@ export function generateAgentMd({ tree, metadata, graph }) {
     } else {
       sections.push("- No internal module connections found.");
     }
+    sections.push("");
+
+    // Chapters (Chapter-based Graph)
+    sections.push("### Chapter-Based Graph");
+    if (graph.chapters && graph.chapters.length > 0) {
+      sections.push(
+        graph.chapters
+          .map(
+            (ch) =>
+              `- **${ch.name}** (${ch.files.length} files)${
+                ch.dependencies.length > 0
+                  ? `\n  - Depends on: ${ch.dependencies.join(", ")}`
+                  : ""
+              }`
+          )
+          .join("\n")
+      );
+    } else {
+      sections.push("- No chapters detected.");
+    }
     sections.push("\n");
   }
 
@@ -303,7 +323,8 @@ export function generateAgentJson(params, fallbackGraph) {
       nodes: graph?.nodes || [],
       edges: graph?.edges || [],
       coreModules,
-      utilities: graph?.utilities || []
+      utilities: graph?.utilities || [],
+      chapters: graph?.chapters || []
     },
     recentCommits: cleanCommits,
     quickNotes: [

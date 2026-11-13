@@ -160,7 +160,8 @@ function determineNodeType(file, importsCount, importedByCount, manifestEntries)
  *   nodes: Array<{ file: string, type: string, imports: string[], importedBy: string[] }>,
  *   edges: Array<{ from: string, to: string, type: string }>,
  *   entryPoints: string[],
- *   utilities: string[]
+ *   utilities: string[],
+ *   chapters: Array<{ name: string, files: string[], dependencies: string[] }>
  * }>}
  */
 export async function buildDependencyGraph(files, rootPath, pkgJson = null) {
@@ -276,10 +277,43 @@ export async function buildDependencyGraph(files, rootPath, pkgJson = null) {
   utilCandidates.sort((a, b) => b.priority - a.priority);
   const utilities = utilCandidates.slice(0, 10).map((u) => u.file);
 
+  // Build Chapters based on directory structure (top-level folders)
+  const chapters = {};
+  for (const node of nodes) {
+    const dir = path.posix.dirname(node.file);
+    const topLevelDir = dir === "." || !dir.includes("/") ? dir : dir.split("/")[0];
+    const chapterName = topLevelDir === "." ? "Root" : topLevelDir;
+    
+    if (!chapters[chapterName]) {
+      chapters[chapterName] = { files: [], dependencies: new Set() };
+    }
+    chapters[chapterName].files.push(node.file);
+  }
+
+  // Calculate chapter dependencies
+  for (const edge of edges) {
+    const fromDir = path.posix.dirname(edge.from);
+    const toDir = path.posix.dirname(edge.to);
+    const fromChapter = (fromDir === "." || !fromDir.includes("/")) ? (fromDir === "." ? "Root" : fromDir) : fromDir.split("/")[0];
+    const toChapter = (toDir === "." || !toDir.includes("/")) ? (toDir === "." ? "Root" : toDir) : toDir.split("/")[0];
+    
+    if (fromChapter !== toChapter) {
+      chapters[fromChapter]?.dependencies.add(toChapter);
+    }
+  }
+
+  // Format chapters for output
+  const formattedChapters = Object.entries(chapters).map(([name, data]) => ({
+    name,
+    files: data.files,
+    dependencies: Array.from(data.dependencies)
+  }));
+
   return {
     nodes,
     edges,
     entryPoints,
-    utilities
+    utilities,
+    chapters: formattedChapters
   };
 }

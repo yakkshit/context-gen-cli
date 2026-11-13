@@ -584,6 +584,7 @@ function extractEntryPoints(files, pkgJson) {
  * @returns {Promise<{
  *   overview: string,
  *   stack: string[],
+ *   primaryFramework: string | null,
  *   deps: { production: string[], development: string[] },
  *   entryPoints: Array<{ name: string, path: string }>,
  *   keyFiles: Array<{ file: string, purpose: string }>
@@ -627,6 +628,7 @@ export async function extractMetadata(rootPath, files, options = {}) {
   }
 
   const stack = detectTechStack(files, pkgJson, hasRequirements, hasPyproject);
+  const primaryFramework = stack.find(s => Object.values(FRAMEWORK_SIGNATURES).includes(s)) || null;
   const overview = await extractOverview(resolvedRoot, pkgJson, files, stack, options.preferredReadme);
   const keyFiles = await selectKeyFiles(resolvedRoot, files, pkgJson);
   const entryPoints = extractEntryPoints(files, pkgJson);
@@ -647,6 +649,7 @@ export async function extractMetadata(rootPath, files, options = {}) {
   return {
     overview,
     stack,
+    primaryFramework,
     deps,
     entryPoints,
     keyFiles,

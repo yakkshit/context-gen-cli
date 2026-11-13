@@ -139,3 +139,111 @@ export function printSummaryCard({
   console.log(border("  └─────────────────────────────────────────────────────────────┘"));
   console.log("");
 }
+
+/**
+ * Renders a high-contrast, color-coded Senior Engineer Context Plan or Clarification Card.
+ */
+export function printDistillCard(result) {
+  console.log("");
+  if (result.status === "needs_clarification") {
+    const warn = chalk.bold.yellow;
+    console.log(warn("  ╔═══════════════════════════════════════════════════════════════╗"));
+    console.log(warn("  ║  ⚠️  CLARIFICATION NEEDED — Ambiguous Prompt Detected         ║"));
+    console.log(warn("  ╚═══════════════════════════════════════════════════════════════╝"));
+    console.log("");
+    for (const line of result.output.split("\n").slice(2)) {
+      if (!line.trim()) continue;
+      console.log("  " + chalk.yellow("▸ ") + chalk.white(line.replace(/\*\*/g, "")));
+    }
+    console.log("");
+    console.log(chalk.dim("  💡 Tip: Re-run with a specific file or workspace name to bypass guessing."));
+    console.log("");
+    return;
+  }
+
+  const border = chalk.bold.cyan;
+  console.log(border("  ╔═══════════════════════════════════════════════════════════════╗"));
+  console.log(border("  ║  🧠 SENIOR ENGINEER CONTEXT PLAN (EGRD Distilled)             ║"));
+  console.log(border("  ╚═══════════════════════════════════════════════════════════════╝"));
+  console.log("");
+
+  const seenLines = new Set();
+  for (const rawLine of result.output.split("\n")) {
+    if (rawLine.startsWith("### ") || !rawLine.trim()) continue;
+    const clean = rawLine.replace(/\*\*/g, "").trim();
+    if (seenLines.has(clean)) continue;
+    seenLines.add(clean);
+
+    if (clean.startsWith("- Task:")) {
+      console.log("  " + chalk.bold.white("🎯 " + clean.slice(2)));
+    } else if (clean.startsWith("- Engineering Mode:")) {
+      console.log("  " + chalk.bold.magenta("⚙️  " + clean.slice(2)));
+    } else if (clean.startsWith("- Primary Files")) {
+      console.log("\n  " + chalk.bold.cyan("📂 Primary Files to Reference:"));
+    } else if (clean.startsWith("•")) {
+      console.log("     " + chalk.green("✔ ") + chalk.bold.white(clean.slice(2)));
+    } else if (clean.startsWith("- Blast Radius")) {
+      // Deduplicate file paths in Blast Radius
+      const [label, filesPart] = clean.slice(2).split(": ");
+      const uniqueFiles = [...new Set((filesPart || "").split(", ").map((s) => s.trim()))];
+      console.log("\n  " + chalk.bold.yellow(`💥 ${label}: `) + chalk.yellow(uniqueFiles.join(", ")));
+    } else if (clean.startsWith("- Architecture Guardrail:")) {
+      console.log("\n  " + chalk.bold.blue("🛡️  " + clean.slice(2)));
+    }
+  }
+  console.log("");
+}
+
+/**
+ * Renders a high-contrast, color-coded Senior Engineer Context Plan or Clarification Card.
+ */
+export function printDistillCard(result) {
+  console.log("");
+  if (result.status === "needs_clarification") {
+    const warn = chalk.bold.yellow;
+    console.log(warn("  ╔═══════════════════════════════════════════════════════════════╗"));
+    console.log(warn("  ║  ⚠️  CLARIFICATION NEEDED — Ambiguous Prompt Detected         ║"));
+    console.log(warn("  ╚═══════════════════════════════════════════════════════════════╝"));
+    console.log("");
+    for (const line of result.output.split("\n").slice(2)) {
+      if (!line.trim()) continue;
+      console.log("  " + chalk.yellow("▸ ") + chalk.white(line.replace(/\*\*/g, "")));
+    }
+    console.log("");
+    console.log(chalk.dim("  💡 Tip: Re-run with a specific file or workspace name to bypass guessing."));
+    console.log("");
+    return;
+  }
+
+  const border = chalk.bold.cyan;
+  console.log(border("  ╔═══════════════════════════════════════════════════════════════╗"));
+  console.log(border("  ║  🧠 SENIOR ENGINEER CONTEXT PLAN (EGRD Distilled)             ║"));
+  console.log(border("  ╚═══════════════════════════════════════════════════════════════╝"));
+  console.log("");
+
+  const seenLines = new Set();
+  for (const rawLine of result.output.split("\n")) {
+    if (rawLine.startsWith("### ") || !rawLine.trim()) continue;
+    const clean = rawLine.replace(/\*\*/g, "").trim();
+    if (seenLines.has(clean)) continue;
+    seenLines.add(clean);
+
+    if (clean.startsWith("- Task:")) {
+      console.log("  " + chalk.bold.white("🎯 " + clean.slice(2)));
+    } else if (clean.startsWith("- Engineering Mode:")) {
+      console.log("  " + chalk.bold.magenta("⚙️  " + clean.slice(2)));
+    } else if (clean.startsWith("- Primary Files")) {
+      console.log("\n  " + chalk.bold.cyan("📂 Primary Files to Reference:"));
+    } else if (clean.startsWith("•")) {
+      console.log("     " + chalk.green("✔ ") + chalk.bold.white(clean.slice(2)));
+    } else if (clean.startsWith("- Blast Radius")) {
+      // Deduplicate file paths in Blast Radius
+      const [label, filesPart] = clean.slice(2).split(": ");
+      const uniqueFiles = [...new Set((filesPart || "").split(", ").map((s) => s.trim()))];
+      console.log("\n  " + chalk.bold.yellow(`💥 ${label}: `) + chalk.yellow(uniqueFiles.join(", ")));
+    } else if (clean.startsWith("- Architecture Guardrail:")) {
+      console.log("\n  " + chalk.bold.blue("🛡️  " + clean.slice(2)));
+    }
+  }
+  console.log("");
+}

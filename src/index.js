@@ -18,9 +18,10 @@ import { scanProject } from "./scanner.js";
 import { extractMetadata, findReadmeFiles } from "./extractor.js";
 import { buildDependencyGraph } from "./graph.js";
 import { generateAgentMd, generateAgentJson, generateAgentYaml } from "./generator.js";
+import { generateSkillMd } from "./skills.js";
 import { loadConfig, getDefaultConfig, saveConfig, CONFIG_FILE_NAME } from "./config.js";
 import { runInitWizard } from "./init.js";
-import { printMainBanner, runAnimatedPipeline, printSummaryCard } from "./ui.js";
+import { printMainBanner, runAnimatedPipeline, printSummaryCard, printDistillCard } from "./ui.js";
 
 export function showUsageGuideText() {
   return `=======================================================
@@ -212,10 +213,16 @@ export async function startDefaultAllInOne(targetPath = ".", options = {}) {
       const jsonObject = generateAgentJson({ tree, metadata, graph, projectPath: rootDir });
       const jsonContent = JSON.stringify(jsonObject, null, 2);
       const yamlContent = generateAgentYaml({ tree, metadata, graph, projectPath: rootDir });
+      const skillMdContent = generateSkillMd(metadata.primaryFramework);
 
       await fs.writeFile(path.join(outDirPath, "agent.md"), mdContent, "utf-8");
       await fs.writeFile(path.join(outDirPath, "agent.json"), jsonContent, "utf-8");
       await fs.writeFile(path.join(outDirPath, "agent.yaml"), yamlContent, "utf-8");
+      await fs.writeFile(path.join(outDirPath, "skill.md"), skillMdContent, "utf-8");
+      
+      const publicDirPath = path.join(rootDir, "public");
+      await fs.mkdir(publicDirPath, { recursive: true });
+      await fs.writeFile(path.join(publicDirPath, "skills.md"), skillMdContent, "utf-8");
 
       if (changedFile) {
         const timeStr = new Date().toLocaleTimeString();
@@ -324,7 +331,7 @@ const program = new Command();
 program
   .name("context-gen-cli")
   .description("Scan any project folder and generate context/agent.md or context/agent.json model for LLMs")
-  .version("1.2.2")
+  .version("1.3.0")
   .addHelpText("after", () => `\n${showUsageGuideText()}`)
   .argument("[path]", "Directory path of the project to scan", ".")
   .option("-d, --default", "Run in zero-config default mode: generate context, boot MCP server, and keep watch running", false)
@@ -461,6 +468,19 @@ program
                 await fs.writeFile(yamlPath, yamlContent, "utf-8");
                 generatedFiles.push({ name: "agent.yaml", chars: yamlContent.length, extra: "clean YAML" });
               }
+
+              // Always generate skill.md
+              const skillMdContent = generateSkillMd(metadata.primaryFramework);
+              const skillPath = path.join(outDirPath, "skill.md");
+              await fs.writeFile(skillPath, skillMdContent, "utf-8");
+              generatedFiles.push({ name: "skill.md", chars: skillMdContent.length, extra: `Framework: ${metadata.primaryFramework || "General"}` });
+
+              // Copy to public/skills.md for web scraping
+              const publicDirPath = path.join(rootDir, "public");
+              await fs.mkdir(publicDirPath, { recursive: true });
+              await fs.writeFile(path.join(publicDirPath, "skills.md"), skillMdContent, "utf-8");
+              generatedFiles.push({ name: "public/skills.md", chars: skillMdContent.length, extra: "For Web LLM Scraping" });
+
               await new Promise((r) => setTimeout(r, 100));
             }
           }
@@ -619,6 +639,19 @@ program
             await fs.writeFile(path.join(outDirPath, "agent.yaml"), yamlContent, "utf-8");
             generatedFiles.push({ name: "agent.yaml", chars: yamlContent.length, extra: "clean YAML" });
           }
+
+          // Always generate skill.md
+          const skillMdContent = generateSkillMd(metadata.primaryFramework);
+          const skillPath = path.join(outDirPath, "skill.md");
+          await fs.writeFile(skillPath, skillMdContent, "utf-8");
+          generatedFiles.push({ name: "skill.md", chars: skillMdContent.length, extra: `Framework: ${metadata.primaryFramework || "General"}` });
+
+          // Copy to public/skills.md for web scraping
+          const publicDirPath = path.join(rootDir, "public");
+          await fs.mkdir(publicDirPath, { recursive: true });
+          await fs.writeFile(path.join(publicDirPath, "skills.md"), skillMdContent, "utf-8");
+          generatedFiles.push({ name: "public/skills.md", chars: skillMdContent.length, extra: "For Web LLM Scraping" });
+
           await new Promise((r) => setTimeout(r, 100));
         }
       }
@@ -665,6 +698,21 @@ program
       projectPath: options.project,
       key: options.key
     });
+  });
+
+program
+  .command("distill")
+  .description("Distill minimal high-signal context for a prompt using Knowledge Graph + Entropy reduction")
+  .argument("<prompt>", "Task or feature description to distill context for")
+  .option("-b, --budget <tokens>", "Maximum token budget for distilled references", "250")
+  .option("-p, --project <path>", "Directory path of the project", ".")
+  .action(async (promptText, options) => {
+    const { distillQuery } = await import("./distill.js");
+    const rootDir = path.resolve(options.project || ".");
+    const res = await distillQuery(rootDir, promptText, Number(options.budget) || 250);
+    console.log("");
+    printDistillCard(res);
+    console.log("");
   });
 
 program.parse(process.argv);

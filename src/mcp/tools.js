@@ -5,10 +5,8 @@ import { scanProject } from "../scanner.js";
 import { extractMetadata } from "../extractor.js";
 import { buildDependencyGraph } from "../graph.js";
 import { generateAgentMd, generateAgentJson } from "../generator.js";
+import { distillQuery } from "../distill.js";
 
-/**
- * List of sensitive filenames or patterns that must NEVER be served to any LLM.
- */
 const FORBIDDEN_FILE_PATTERNS = [
   /^\.env/i,
   /\.context-gen-key$/i,
@@ -19,13 +17,6 @@ const FORBIDDEN_FILE_PATTERNS = [
   /(^|[/\\])\.git([/\\]|$)/i
 ];
 
-/**
- * Validates that a file target is safe to read.
- * @param {string} projectRoot - Base project directory.
- * @param {string} relativeFilePath - Requested relative file path.
- * @returns {string} Resolved safe file path.
- * @throws {Error} If path traversal or security violation detected.
- */
 function validateSafeFilePath(projectRoot, relativeFilePath) {
   const resolvedRoot = path.resolve(projectRoot);
   const resolvedFile = path.resolve(resolvedRoot, relativeFilePath);
@@ -43,11 +34,6 @@ function validateSafeFilePath(projectRoot, relativeFilePath) {
   return resolvedFile;
 }
 
-/**
- * Registers all context-gen tools with the given McpServer instance.
- * @param {import("@modelcontextprotocol/sdk/server/mcp.js").McpServer} mcpServer - MCP server instance.
- * @param {string} defaultProjectPath - Default project path configured at server start.
- */
 export function registerMcpTools(mcpServer, defaultProjectPath) {
   const baseDefaultPath = path.resolve(defaultProjectPath || process.cwd());
 
@@ -95,17 +81,12 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
       }
 
       return {
-        content: [
-          {
-            type: "text",
-            text: content
-          }
-        ]
+        content: [{ type: "text", text: content }]
       };
     }
   );
 
-  // 2. get_context tool (JSON direct)
+  // 2. get_context tool
   mcpServer.tool(
     "get_context",
     "Generates and returns complete structured project context JSON (tech stack, entry points, dependency graph, key files).",
@@ -129,17 +110,12 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
       });
 
       return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(jsonContext, null, 2)
-          }
-        ]
+        content: [{ type: "text", text: JSON.stringify(jsonContext, null, 2) }]
       };
     }
   );
 
-  // 3. scan_project tool (Scanner only)
+  // 3. scan_project tool
   mcpServer.tool(
     "scan_project",
     "Scans a project directory and returns the list of files, directory tree structure, and detected tech stack.",
@@ -163,17 +139,12 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
       };
 
       return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(result, null, 2)
-          }
-        ]
+        content: [{ type: "text", text: JSON.stringify(result, null, 2) }]
       };
     }
   );
 
-  // 4. get_file tool (Safe file reading)
+  // 4. get_file tool
   mcpServer.tool(
     "get_file",
     "Reads and returns the content of a specific file in the project safely, blocking sensitive/secret files.",
@@ -187,21 +158,37 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
     async ({ filePath, projectPath }) => {
       const targetDir = path.resolve(projectPath || baseDefaultPath);
       const safePath = validateSafeFilePath(targetDir, filePath);
-
       const fileContent = await fs.readFile(safePath, "utf-8");
 
       return {
-        content: [
-          {
-            type: "text",
-            text: fileContent
-          }
-        ]
+        content: [{ type: "text", text: fileContent }]
       };
     }
   );
 
-  // 5. list_tools_info tool
+  // 5. distill_context tool (Entropy-Guided Reference Distillation + Clarification Gate)
+  mcpServer.tool(
+    "distill_context",
+    "Distills minimal, high-signal architectural references for a user prompt using Knowledge Graph + Probabilistic Entropy reduction. Returns clarifying questions with examples if the prompt is ambiguous.",
+    {
+      prompt: z.string().describe("The user's task or feature request"),
+      budget: z.number().default(250).describe("Maximum context token budget (default: 250)"),
+      projectPath: z
+        .string()
+        .optional()
+        .describe("Directory path of the project (defaults to server project root)")
+    },
+    async ({ prompt, budget, projectPath }) => {
+      const targetDir = path.resolve(projectPath || baseDefaultPath);
+      const result = await distillQuery(targetDir, prompt, budget);
+
+      return {
+        content: [{ type: "text", text: result.output }]
+      };
+    }
+  );
+
+  // 6. list_tools_info tool
   mcpServer.tool(
     "list_tools_info",
     "Lists descriptions and parameter guides for all available context-gen MCP tools.",
@@ -209,8 +196,13 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
     async () => {
       const info = {
         server: "context-gen-cli MCP Server",
-        version: "1.0.0",
+        version: "1.3.0",
         tools: [
+          {
+            name: "distill_context",
+            description: "Entropy-guided minimal context distillation with ambiguity clarification gate.",
+            inputs: ["prompt (required)", "budget (optional, default 250)", "projectPath (optional)"]
+          },
           {
             name: "generate_context",
             description: "Generates full context in markdown or JSON format.",
@@ -240,12 +232,7 @@ export function registerMcpTools(mcpServer, defaultProjectPath) {
       };
 
       return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(info, null, 2)
-          }
-        ]
+        content: [{ type: "text", text: JSON.stringify(info, null, 2) }]
       };
     }
   );
