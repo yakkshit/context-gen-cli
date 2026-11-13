@@ -53,7 +53,9 @@ A CLI tool that scans any project, builds a graph-based context model, and gener
     │   ├── index.js
     │   ├── init.js
     │   ├── scanner.js
-    │   └── security.js
+    │   ├── security.js
+    │   ├── skills.js
+    │   └── ui.js
     ├── .gitignore
     ├── .npmignore
     ├── LICENSE
@@ -79,7 +81,7 @@ A CLI tool that scans any project, builds a graph-based context model, and gener
 - **`src/index.js`**: Scans a project, builds an architecture & dependency graph model,.
 - **`src/init.js`**: Displays the ASCII art welcome banner.
 - **`src/scanner.js`**: Source module.
-- **`package.json`**: Project manifest, metadata, dependencies, and script definitions.
+- **`src/skills.js`**: Framework-specific skill templates for LLMs.
 
 
 ## Dependencies
@@ -144,13 +146,18 @@ A CLI tool that scans any project, builds a graph-based context model, and gener
 - `src/mcp/server.js` → `src/generator.js`
 - `src/mcp/tools.js` → `src/scanner.js`
 
+### Chapter-Based Graph
+- **python** (11 files)
+- **src** (14 files)
+
 
 ## Recent Git Commits
 
-- `f888dde`: Bump Python version to 1.2.4 and automate version bumping in publish.sh (13 minutes ago by yakkshit)
-- `9d58e5d`: Fix ENOENT when saving config and add update/generate commands (21 minutes ago by yakkshit)
-- `8e4e538`: Fix explain_architecture node attribute lookup and deprecation warnings (29 minutes ago by yakkshit)
-- `e175c16`: first commit (2 hours ago by yakkshit)
+- `6ee8b75`: Add fancy ASCII gradient banners, multi-stage animated progress bars, and metrics cards (12 days ago by yakkshit)
+- `e3c200f`: Update usage guide, next steps cards, and READMEs with ctx alias and flag shortcuts (12 days ago by yakkshit)
+- `703b877`: Store .context-gen.json and all tool outputs inside context/ or user-defined folder (12 days ago by yakkshit)
+- `f888dde`: Bump Python version to 1.2.4 and automate version bumping in publish.sh (12 days ago by yakkshit)
+- `9d58e5d`: Fix ENOENT when saving config and add update/generate commands (12 days ago by yakkshit)
 
 
 ## Quick Notes for the LLM

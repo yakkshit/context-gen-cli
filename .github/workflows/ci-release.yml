@@ -1,0 +1,108 @@
+name: CI & Multi-Registry Release
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  test-node-cli:
+    name: Test Node.js CLI & EGRD Engine
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci || npm install
+      - run: node src/index.js --version
+      - run: node src/index.js distill "update mcp tools and scanner graph"
+
+  test-python-cli:
+    name: Test Python CLI & Package Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install & verify Python package
+        working-directory: python
+        run: |
+          python -m pip install --upgrade pip build
+          pip install -e .
+          ctx --help
+          python -m build
+
+  build-website:
+    name: Build Documentation Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - name: Install & build Next.js site
+        working-directory: website
+        run: |
+          bun install
+          bun run build
+
+  publish-release:
+    name: Publish to npm, PyPI & Sync Homebrew Formula
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [test-node-cli, test-python-cli, build-website]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Publish to npm
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          npm ci || npm install
+          npm publish --access public
+
+      - name: Publish to PyPI
+        working-directory: python
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          python -m pip install --upgrade build twine
+          python -m build
+          twine upload dist/*
+
+      - name: Sync Homebrew Formula SHA256
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TARBALL_URL="https://registry.npmjs.org/context-gen-cli/-/context-gen-cli-${VERSION}.tgz"
+          sleep 6
+          SHA256=$(curl -sL "$TARBALL_URL" | sha256sum | awk '{print $1}')
+
+          sed -i "s|url \".*\"|url \"$TARBALL_URL\"|" Formula/context-gen-cli.rb
+          sed -i "s|sha256 \".*\"|sha256 \"$SHA256\"|" Formula/context-gen-cli.rb
+          sed -i "s|assert_match \".*\"|assert_match \"$VERSION\"|" Formula/context-gen-cli.rb
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/context-gen-cli.rb
+          git commit -m "chore(formula): update sha256 for v${VERSION} [skip ci]" || exit 0
+          git push origin main

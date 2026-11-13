@@ -1,5 +1,5 @@
 version: 1.0.0
-generatedAt: '2026-08-28T09:50:14.655Z'
+generatedAt: '2026-09-09T14:14:41.999Z'
 projectPath: /Users/yakkshit/Downloads/project/context graph
 overview: A CLI tool that scans any project, builds a graph-based context model, and generates an agent.md file for LLMs.
 techStack:
@@ -45,7 +45,9 @@ directoryStructure: |-
       │   ├── index.js
       │   ├── init.js
       │   ├── scanner.js
-      │   └── security.js
+      │   ├── security.js
+      │   ├── skills.js
+      │   └── ui.js
       ├── .gitignore
       ├── .npmignore
       ├── LICENSE
@@ -82,8 +84,8 @@ keyFiles:
     description: Displays the ASCII art welcome banner.
   - path: src/scanner.js
     description: Source module.
-  - path: package.json
-    description: Project manifest, metadata, dependencies, and script definitions.
+  - path: src/skills.js
+    description: Framework-specific skill templates for LLMs.
 dependencies:
   production:
     '@inquirer/prompts': ^8.7.0
@@ -224,8 +226,10 @@ dependencyGraph:
         - src/extractor.js
         - src/graph.js
         - src/generator.js
+        - src/skills.js
         - src/config.js
         - src/init.js
+        - src/ui.js
         - src/mcp/server.js
       importedBy: []
     - file: src/init.js
@@ -241,6 +245,16 @@ dependencyGraph:
       importedBy:
         - src/mcp/server.js
         - src/mcp/tools.js
+        - src/index.js
+    - file: src/skills.js
+      type: module
+      imports: []
+      importedBy:
+        - src/index.js
+    - file: src/ui.js
+      type: module
+      imports: []
+      importedBy:
         - src/index.js
   edges:
     - from: python/tests/test_fixture/main.py
@@ -295,10 +309,16 @@ dependencyGraph:
       to: src/generator.js
       type: import
     - from: src/index.js
+      to: src/skills.js
+      type: import
+    - from: src/index.js
       to: src/config.js
       type: import
     - from: src/index.js
       to: src/init.js
+      type: import
+    - from: src/index.js
+      to: src/ui.js
       type: import
     - from: src/index.js
       to: src/mcp/server.js
@@ -325,22 +345,58 @@ dependencyGraph:
     - src/graph.js
     - src/scanner.js
     - python/tests/test_fixture/utils.py
+  chapters:
+    - name: python
+      files:
+        - python/context_gen/mcp/__init__.py
+        - python/context_gen/__init__.py
+        - python/context_gen/cli.py
+        - python/context_gen/extractor.py
+        - python/context_gen/generator.py
+        - python/context_gen/graph.py
+        - python/context_gen/scanner.py
+        - python/tests/test_fixture/main.py
+        - python/tests/test_fixture/utils.py
+        - python/tests/test_advanced_tools.py
+        - python/tests/verify_scanner_graph.py
+      dependencies: []
+    - name: src
+      files:
+        - src/mcp/auth.js
+        - src/mcp/dashboard.js
+        - src/mcp/server.js
+        - src/mcp/tools.js
+        - src/mcp/tunnel.js
+        - src/config.js
+        - src/extractor.js
+        - src/generator.js
+        - src/graph.js
+        - src/index.js
+        - src/init.js
+        - src/scanner.js
+        - src/skills.js
+        - src/ui.js
+      dependencies: []
 recentCommits:
+  - hash: 6ee8b75
+    message: Add fancy ASCII gradient banners, multi-stage animated progress bars, and metrics cards
+    date: 12 days ago
+    author: yakkshit
+  - hash: e3c200f
+    message: Update usage guide, next steps cards, and READMEs with ctx alias and flag shortcuts
+    date: 12 days ago
+    author: yakkshit
+  - hash: 703b877
+    message: Store .context-gen.json and all tool outputs inside context/ or user-defined folder
+    date: 12 days ago
+    author: yakkshit
   - hash: f888dde
     message: Bump Python version to 1.2.4 and automate version bumping in publish.sh
-    date: 13 minutes ago
+    date: 12 days ago
     author: yakkshit
   - hash: 9d58e5d
     message: Fix ENOENT when saving config and add update/generate commands
-    date: 21 minutes ago
-    author: yakkshit
-  - hash: 8e4e538
-    message: Fix explain_architecture node attribute lookup and deprecation warnings
-    date: 29 minutes ago
-    author: yakkshit
-  - hash: e175c16
-    message: first commit
-    date: 2 hours ago
+    date: 12 days ago
     author: yakkshit
 quickNotes:
   - 'Execution Context: Refer to the entry points to understand application bootstrap.'
