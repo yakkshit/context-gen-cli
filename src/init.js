@@ -120,6 +120,35 @@ export async function runInitWizard(projectPath = process.cwd()) {
   const outputDir = outputDirAnswer.trim() || "context";
   console.log(chalk.green(`  ↳ Context files will be generated in: ${chalk.bold(outputDir + "/")}\n`));
 
+  // Ask whether to add the output directory to .gitignore (default: true)
+  const addGitignoreAnswer = await confirm({
+    message: `Add '${outputDir}/' to .gitignore?`,
+    default: true,
+  });
+
+  if (addGitignoreAnswer) {
+    const gitignorePath = path.join(resolvedPath, ".gitignore");
+    try {
+      let content = "";
+      try {
+        content = await fs.readFile(gitignorePath, "utf-8");
+      } catch {
+        // file does not exist yet
+      }
+
+      const pattern = new RegExp(`(^|\\r?\\n)${outputDir}\\/?(\\r?\\n|$)`);
+      if (!pattern.test(content)) {
+        const prefix = content.length > 0 && !content.endsWith("\n") ? "\n" : "";
+        await fs.appendFile(gitignorePath, `${prefix}# context-gen-cli generated context\n${outputDir}/\n`, "utf-8");
+        console.log(chalk.green(`  ↳ Added ${chalk.bold(outputDir + "/")} to .gitignore\n`));
+      } else {
+        console.log(chalk.gray(`  ↳ '${outputDir}/' is already in .gitignore\n`));
+      }
+    } catch (err) {
+      console.warn(chalk.yellow(`  ⚠️  Could not update .gitignore: ${err.message}\n`));
+    }
+  }
+
   const selectedFormats = await checkbox({
     message: "Which context formats would you like to generate?",
     choices: [

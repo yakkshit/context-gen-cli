@@ -23,7 +23,7 @@ const INSTALL_COMMANDS = {
   npx: "npx context-gen-cli@latest -d",
   pip: "pip install context-gen-cli",
   brew: "brew tap yakkshit/context-gen https://github.com/yakkshit/context-gen.git && brew install context-gen-cli",
-  dart: "dart pub global activate context_gen",
+  dart: "dart pub global activate context_gen_cli",
   java: "jbang com.cedzlabs:context-gen-cli:1.3.4",
 };
 

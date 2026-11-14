@@ -18,6 +18,11 @@ __pycache__/
 *.pyc
 .pytest_cache/
 .DS_Store
+.dart_tool/
+target/
+.gradle/
+.turbo/
+.cache/
 
 # Output
 context/

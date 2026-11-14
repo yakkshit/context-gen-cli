@@ -1,14 +1,14 @@
-# context_gen (Dart Edition)
+# context_gen_cli (Dart Edition)
 
 ⚡ **High-performance project context generator and Entropy-Guided Reference Distillation (EGRD) CLI.**
 
-Stop dumping 50,000 raw prompt tokens into Claude, Cursor, and ChatGPT. `context_gen` extracts lightweight architectural graphs, module dependencies, and precision blueprints in 1-2 CPU cores with zero GPU bloat.
+Stop dumping 50,000 raw prompt tokens into Claude, Cursor, and ChatGPT. `context_gen_cli` extracts lightweight architectural graphs, module dependencies, and precision blueprints in 1-2 CPU cores with zero GPU bloat.
 
 ## Installation
 
 ```bash
 # Global installation via pub.dev
-dart pub global activate context_gen
+dart pub global activate context_gen_cli
 
 # Run anywhere
 ctx --help

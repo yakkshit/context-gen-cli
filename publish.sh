@@ -198,11 +198,22 @@ if $PUBLISH_DART; then
   if ! command -v dart &> /dev/null; then
     log_warn "dart CLI not installed (run 'brew install dart-sdk'). Skipping pub.dev upload."
   else
+    # Ensure LICENSE file is in package root (required by pub.dev)
+    cp -f "$SCRIPT_DIR/LICENSE" "$DART_DIR/LICENSE"
+
+    # Ensure pubspec.yaml version is synced
     sed -i '' "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+
+    # Ensure CHANGELOG.md mentions current version
+    if ! grep -q "## $NEW_VERSION" CHANGELOG.md 2>/dev/null; then
+      sed -i '' "1s/^/# Changelog\n\n## $NEW_VERSION\n- Release v$NEW_VERSION\n\n/" CHANGELOG.md
+    fi
+
     if ! $DRY_RUN; then
       dart pub get
-      dart pub publish --force
-      log_success "Published context_gen v$NEW_VERSION to pub.dev!"
+      log_info "Publishing context_gen_cli v$NEW_VERSION to pub.dev..."
+      dart pub publish
+      log_success "Published context_gen_cli v$NEW_VERSION to pub.dev!"
     else
       log_info "[DRY RUN] Running 'dart pub publish --dry-run'..."
       dart pub publish --dry-run || true
@@ -214,9 +225,10 @@ fi
 if $PUBLISH_JAVA; then
   log_step "☕ Publishing Java Package"
   cd "$JAVA_DIR"
+  cp -f "$SCRIPT_DIR/LICENSE" "$JAVA_DIR/LICENSE"
 
   if ! command -v mvn &> /dev/null; then
-    log_warn "mvn not found. If Maven is installed, build with 'mvn clean deploy -P release'."
+    log_warn "mvn not found. Install Maven via: brew install maven"
   else
     if ! $DRY_RUN; then
       mvn versions:set -DnewVersion="$NEW_VERSION" -DgenerateBackupPoms=false || true

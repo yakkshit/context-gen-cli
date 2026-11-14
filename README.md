@@ -48,7 +48,7 @@ ctx -d
 
 ### Option 4: Dart (pub.dev)
 ```bash
-dart pub global activate context_gen
+dart pub global activate context_gen_cli
 ctx -d
 ```
 

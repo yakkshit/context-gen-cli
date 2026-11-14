@@ -290,10 +290,10 @@ export default function DocPage() {
                     <span>Pub Package</span>
                   </div>
                   <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-lg border border-border">
-                    <code className="text-primary">dart pub global activate context_gen && ctx -d</code>
+                    <code className="text-primary">dart pub global activate context_gen_cli && ctx -d</code>
                     <button
                       type="button"
-                      onClick={() => handleCopy("install-dart", "dart pub global activate context_gen && ctx -d")}
+                      onClick={() => handleCopy("install-dart", "dart pub global activate context_gen_cli && ctx -d")}
                       className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"
                     >
                       {copiedKey === "install-dart" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

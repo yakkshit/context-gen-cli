@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as p;
-import 'package:context_gen/context_gen.dart';
+import 'package:context_gen_cli/context_gen_cli.dart';
 
 void main(List<String> arguments) async {
   final parser = ArgParser()
