@@ -25,7 +25,8 @@ const SUPPORTED_EXT = {
 const IGNORE_DIRS = new Set([
   "node_modules", ".git", ".next", "dist", "build", ".graviton",
   "target", "__pycache__", ".venv", "venv", ".dart_tool", "bin", "obj",
-  "test", "tests", "context", "public",
+  "test", "tests", "context", "public", "site-packages", ".turbo", ".cache",
+  ".pytest_cache", ".mypy_cache", ".ruff_cache",
 ]);
 
 function detectWorkspace(relPath) {

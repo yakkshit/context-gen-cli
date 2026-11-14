@@ -7,10 +7,12 @@
  */
 
 import fs from "node:fs/promises";
+import fsSync from "node:fs";
 import path from "node:path";
 import { Command } from "commander";
 import { select, checkbox, input } from "@inquirer/prompts";
 import chokidar from "chokidar";
+import ignore from "ignore";
 import chalk from "chalk";
 import ora from "ora";
 import figlet from "figlet";
@@ -183,6 +185,87 @@ ${publicUrl ? `🌐 Public URL:  ${activeUrl}\n` : ""}🔐 API Key:     ${apiKey
 }
 
 /**
+ * Constructs an ignore filter for chokidar that prevents EMFILE (too many open files)
+ * by refusing to crawl or watch virtual environments (.venv*, venv*), node_modules,
+ * python caches, build artifacts, and files matching .gitignore.
+ * @param {string} rootDir - Root directory being watched.
+ * @returns {(filePath: string) => boolean}
+ */
+export function createWatcherIgnore(rootDir) {
+  const ig = ignore();
+  ig.add([
+    "node_modules",
+    ".git",
+    "dist",
+    "build",
+    ".next",
+    ".turbo",
+    ".cache",
+    "coverage",
+    "context",
+    "__pycache__",
+    ".pytest_cache",
+    ".mypy_cache",
+    ".ruff_cache",
+    "*.pyc",
+    "site-packages",
+    "site-packages/**",
+    "*.log",
+    ".DS_Store",
+    "agent.md",
+    "agent.json",
+    "agent.yaml",
+    "mcp.md",
+    ".context-gen.json"
+  ]);
+
+  const ignoreFiles = [".gitignore", ".contextignore", ".ignore"];
+  for (const f of ignoreFiles) {
+    try {
+      const p = path.join(rootDir, f);
+      if (fsSync.existsSync(p)) {
+        ig.add(fsSync.readFileSync(p, "utf-8"));
+      }
+    } catch {}
+  }
+
+  const fastRegex = [
+    /(^|[\/\\])node_modules([\/\\]|$)/,
+    /(^|[\/\\])\.git([\/\\]|$)/,
+    /(^|[\/\\])dist([\/\\]|$)/,
+    /(^|[\/\\])build([\/\\]|$)/,
+    /(^|[\/\\])\.next([\/\\]|$)/,
+    /(^|[\/\\])\.turbo([\/\\]|$)/,
+    /(^|[\/\\])\.cache([\/\\]|$)/,
+    /(^|[\/\\])coverage([\/\\]|$)/,
+    /(^|[\/\\])context([\/\\]|$)/,
+    /(^|[\/\\])\.?[a-zA-Z0-9_-]*venv[a-zA-Z0-9_-]*([\/\\]|$)/i, // Matches .venv, .venv_run, venv, my_venv, etc.
+    /(^|[\/\\])site-packages([\/\\]|$)/,
+    /(^|[\/\\])__pycache__([\/\\]|$)/,
+    /(^|[\/\\])\.(pytest|mypy|ruff)_cache([\/\\]|$)/,
+    /agent\.(md|json|yaml)$/,
+    /\.context-gen\.json$/,
+    /\.log$/,
+    /\.DS_Store$/
+  ];
+
+  return (filePath) => {
+    // 1. Fast regex match (prevents chokidar from even recursing into ignored subdirectories)
+    for (const re of fastRegex) {
+      if (re.test(filePath)) return true;
+    }
+    // 2. Gitignore rule match
+    try {
+      const rel = path.relative(rootDir, filePath);
+      if (rel && rel !== "." && !rel.startsWith("..")) {
+        return ig.ignores(rel);
+      }
+    } catch {}
+    return false;
+  };
+}
+
+/**
  * Executes default all-in-one mode (-d, --default):
  * Generates context in context/, starts MCP server (local or public), and runs live watch mode in background.
  * Automatically shuts down watcher when MCP server is stopped (Ctrl+C).
@@ -250,23 +333,13 @@ export async function startDefaultAllInOne(targetPath = ".", options = {}) {
   const activeUrl = publicUrl ? `${publicUrl}/mcp` : `http://localhost:${activePort}/mcp`;
   mcpSpinner.succeed(chalk.green(`✓ MCP Server live on ${chalk.bold(activeUrl)}`));
 
-  // 3. Start background file watcher
-  const ignoredPatterns = [
-    /(^|[\/\\])node_modules([\/\\]|$)/,
-    /(^|[\/\\])\.git([\/\\]|$)/,
-    /(^|[\/\\])dist([\/\\]|$)/,
-    /(^|[\/\\])build([\/\\]|$)/,
-    /(^|[\/\\])\.next([\/\\]|$)/,
-    /(^|[\/\\])context([\/\\]|$)/,
-    /agent\.(md|json|yaml)$/,
-    /\.context-gen\.json$/,
-    /\.log$/
-  ];
-
+  // 3. Start background file watcher (with robust ignore filter for virtualenvs and heavy caches)
+  const watcherFilter = createWatcherIgnore(rootDir);
   const watcher = chokidar.watch(rootDir, {
-    ignored: ignoredPatterns,
+    ignored: watcherFilter,
     ignoreInitial: true,
-    persistent: true
+    persistent: true,
+    followSymlinks: false
   });
 
   let debounceTimer = null;
@@ -331,7 +404,7 @@ const program = new Command();
 program
   .name("context-gen-cli")
   .description("Scan any project folder and generate context/agent.md or context/agent.json model for LLMs")
-  .version("1.3.4")
+  .version("1.3.5")
   .addHelpText("after", () => `\n${showUsageGuideText()}`)
   .argument("[path]", "Directory path of the project to scan", ".")
   .option("-d, --default", "Run in zero-config default mode: generate context, boot MCP server, and keep watch running", false)
@@ -524,22 +597,11 @@ program
       console.log(chalk.yellow("👀 Watching for changes in project... (Press Ctrl+C to stop)\n"));
 
       let debounceTimer = null;
-      const ignoredPatterns = [
-        /(^|[\/\\])node_modules([\/\\]|$)/,
-        /(^|[\/\\])\.git([\/\\]|$)/,
-        /(^|[\/\\])dist([\/\\]|$)/,
-        /(^|[\/\\])build([\/\\]|$)/,
-        /(^|[\/\\])\.next([\/\\]|$)/,
-        /(^|[\/\\])context([\/\\]|$)/,
-        /agent\.(md|json|yaml)$/,
-        /\.context-gen\.json$/,
-        /\.log$/
-      ];
-
       const watcher = chokidar.watch(rootDir, {
-        ignored: ignoredPatterns,
+        ignored: createWatcherIgnore(rootDir),
         ignoreInitial: true,
-        persistent: true
+        persistent: true,
+        followSymlinks: false
       });
 
       const handleFileChange = (filePath) => {

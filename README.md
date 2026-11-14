@@ -23,6 +23,11 @@
 
 ## 🚀 Quick Install
 
+> [!TIP]
+> **Package Name vs. Terminal Command:**  
+> The package is named **`context-gen-cli`** across registries (npm, PyPI, Homebrew), but the command you type in your terminal is **`ctx`**!  
+> Run `ctx -d`, `ctx distill "query"`, or `ctx --tokens`.
+
 ### Option 1: Node.js / `npx` (Zero Install)
 ```bash
 npx context-gen-cli@latest -d
@@ -39,6 +44,18 @@ ctx -d
 brew tap yakkshit/context-gen https://github.com/yakkshit/context-gen.git
 brew install context-gen-cli
 ctx -d
+```
+
+### Option 4: Dart (pub.dev)
+```bash
+dart pub global activate context_gen
+ctx -d
+```
+
+### Option 5: Java / JVM (JBang / Fat JAR)
+```bash
+# Run instantly with JBang:
+jbang com.cedzlabs:context-gen-cli:1.3.4
 ```
 
 ---

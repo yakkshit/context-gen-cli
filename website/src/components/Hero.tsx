@@ -23,10 +23,12 @@ const INSTALL_COMMANDS = {
   npx: "npx context-gen-cli@latest -d",
   pip: "pip install context-gen-cli",
   brew: "brew tap yakkshit/context-gen https://github.com/yakkshit/context-gen.git && brew install context-gen-cli",
+  dart: "dart pub global activate context_gen",
+  java: "jbang com.cedzlabs:context-gen-cli:1.3.4",
 };
 
 export function Hero() {
-  const [activeTab, setActiveTab] = useState<"npx" | "pip" | "brew">("npx");
+  const [activeTab, setActiveTab] = useState<"npx" | "pip" | "brew" | "dart" | "java">("npx");
   const [copied, setCopied] = useState(false);
 
   const handleCopy = (command: string) => {
@@ -86,19 +88,25 @@ export function Hero() {
                   </span>
                 </div>
 
-                <TabsList className="w-full justify-start bg-card border border-border p-0.5">
-                  <TabsTrigger value="npx" className="flex-1">
+                <TabsList className="w-full justify-start bg-card border border-border p-0.5 overflow-x-auto">
+                  <TabsTrigger value="npx" className="flex-1 text-[11px] sm:text-xs">
                     npx (Node)
                   </TabsTrigger>
-                  <TabsTrigger value="pip" className="flex-1">
+                  <TabsTrigger value="pip" className="flex-1 text-[11px] sm:text-xs">
                     pip (Python)
                   </TabsTrigger>
-                  <TabsTrigger value="brew" className="flex-1">
-                    brew (Homebrew)
+                  <TabsTrigger value="brew" className="flex-1 text-[11px] sm:text-xs">
+                    brew (Mac)
+                  </TabsTrigger>
+                  <TabsTrigger value="dart" className="flex-1 text-[11px] sm:text-xs">
+                    dart (pub.dev)
+                  </TabsTrigger>
+                  <TabsTrigger value="java" className="flex-1 text-[11px] sm:text-xs">
+                    java (JBang)
                   </TabsTrigger>
                 </TabsList>
 
-                {(["npx", "pip", "brew"] as const).map((tabKey) => (
+                {(["npx", "pip", "brew", "dart", "java"] as const).map((tabKey) => (
                   <TabsContent key={tabKey} value={tabKey}>
                     <div className="group relative flex items-center justify-between rounded-xl border border-border bg-card px-4 py-2.5">
                       <div className="flex items-center gap-2.5 overflow-x-auto pr-2 font-mono text-xs text-foreground select-all">

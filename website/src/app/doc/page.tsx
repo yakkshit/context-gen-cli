@@ -282,6 +282,42 @@ export default function DocPage() {
                     </button>
                   </div>
                 </div>
+
+                {/* Dart */}
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <div className="flex items-center justify-between text-muted-foreground text-[11px]">
+                    <span className="font-semibold text-foreground">Dart / Flutter (pub.dev)</span>
+                    <span>Pub Package</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-lg border border-border">
+                    <code className="text-primary">dart pub global activate context_gen && ctx -d</code>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy("install-dart", "dart pub global activate context_gen && ctx -d")}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer"
+                    >
+                      {copiedKey === "install-dart" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Java */}
+                <div className="rounded-xl border border-border bg-card p-4 space-y-2">
+                  <div className="flex items-center justify-between text-muted-foreground text-[11px]">
+                    <span className="font-semibold text-foreground">Java / JVM (JBang / Maven)</span>
+                    <span>Zero Install JVM CLI</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-lg border border-border">
+                    <code className="text-primary truncate mr-2">jbang com.cedzlabs:context-gen-cli:1.3.4</code>
+                    <button
+                      type="button"
+                      onClick={() => handleCopy("install-java", "jbang com.cedzlabs:context-gen-cli:1.3.4")}
+                      className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+                    >
+                      {copiedKey === "install-java" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
+                </div>
               </div>
             </section>
 

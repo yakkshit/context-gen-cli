@@ -6,6 +6,7 @@ on:
     tags: ["v*"]
   pull_request:
     branches: [main]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -13,41 +14,83 @@ permissions:
 
 jobs:
   test-node-cli:
-    name: Test Node.js CLI & EGRD Engine
+    name: Test Node.js CLI (`ctx`) & EGRD Engine
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: ["18.x", "20.x", "22.x"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: ${{ matrix.node-version }}
           cache: "npm"
-      - run: npm ci || npm install
-      - run: node src/index.js --version
-      - run: node src/index.js distill "update mcp tools and scanner graph"
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run Node test suite
+        run: npm test
+
+      - name: Test `ctx` CLI binary linking
+        run: |
+          npm link
+          ctx --version
+          ctx distill "update mcp tools and scanner graph in src"
+          ctx --help
 
   test-python-cli:
-    name: Test Python CLI & Package Build
+    name: Test Python CLI (`ctx`) & PyPI Wheel Build
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
-      - name: Install & verify Python package
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install and verify Python package & `ctx` command
         working-directory: python
         run: |
-          python -m pip install --upgrade pip build
+          python -m pip install --upgrade pip build wheel
           pip install -e .
           ctx --help
+          python -m context_gen.cli --help
+          python tests/verify_scanner_graph.py
           python -m build
 
-  build-website:
-    name: Build Documentation Website
+  test-dart-package:
+    name: Verify Dart Package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: oven-sh/setup-bun@v2
-      - name: Install & build Next.js site
+
+      - name: Setup Dart SDK
+        uses: dart-lang/setup-dart@v1
+
+      - name: Verify Dart CLI
+        working-directory: dart
+        run: |
+          dart pub get
+          dart run bin/ctx.dart --help
+          dart pub publish --dry-run || true
+
+  build-website:
+    name: Build Showcase & Documentation Website
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install and build Next.js site
         working-directory: website
         run: |
           bun install
@@ -56,7 +99,7 @@ jobs:
   publish-release:
     name: Publish to npm, PyPI & Sync Homebrew Formula
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [test-node-cli, test-python-cli, build-website]
+    needs: [test-node-cli, test-python-cli, test-dart-package, build-website]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -64,12 +107,14 @@ jobs:
           ref: main
           fetch-depth: 0
 
-      - uses: actions/setup-node@v4
+      - name: Setup Node.js for npm release
+        uses: actions/setup-node@v4
         with:
           node-version: "20"
           registry-url: "https://registry.npmjs.org"
 
-      - uses: actions/setup-python@v5
+      - name: Setup Python for PyPI release
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
@@ -87,15 +132,32 @@ jobs:
           TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
         run: |
           python -m pip install --upgrade build twine
+          rm -rf dist/ build/ *.egg-info
           python -m build
           twine upload dist/*
 
-      - name: Sync Homebrew Formula SHA256
+      - name: Resilient Homebrew Formula SHA256 Sync
         run: |
           VERSION=$(node -p "require('./package.json').version")
           TARBALL_URL="https://registry.npmjs.org/context-gen-cli/-/context-gen-cli-${VERSION}.tgz"
-          sleep 6
-          SHA256=$(curl -sL "$TARBALL_URL" | sha256sum | awk '{print $1}')
+
+          # Poll npm registry CDN until tarball is 200 OK
+          SHA256=""
+          for i in {1..12}; do
+            HTTP_CODE=$(curl -s -o /tmp/pkg.tgz -w "%{http_code}" "$TARBALL_URL")
+            if [ "$HTTP_CODE" = "200" ]; then
+              SHA256=$(sha256sum /tmp/pkg.tgz | awk '{print $1}')
+              echo "Tarball ready. SHA256: $SHA256"
+              break
+            fi
+            echo "Waiting for npm CDN propagation (attempt $i/12)..."
+            sleep 5
+          done
+
+          if [ -z "$SHA256" ]; then
+            echo "Error: Could not retrieve npm tarball after 60 seconds."
+            exit 1
+          fi
 
           sed -i "s|url \".*\"|url \"$TARBALL_URL\"|" Formula/context-gen-cli.rb
           sed -i "s|sha256 \".*\"|sha256 \"$SHA256\"|" Formula/context-gen-cli.rb

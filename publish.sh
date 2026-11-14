@@ -16,25 +16,47 @@ log_step()    { echo -e "\n${PURPLE}${BOLD}━━━ $1 ━━━${NC}"; }
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 NODE_DIR="$SCRIPT_DIR"
 PYTHON_DIR="$SCRIPT_DIR/python"
+DART_DIR="$SCRIPT_DIR/dart"
+JAVA_DIR="$SCRIPT_DIR/java"
 FORMULA_FILE="$SCRIPT_DIR/Formula/context-gen-cli.rb"
 
 PUBLISH_NODE=true
 PUBLISH_PYTHON=true
+PUBLISH_DART=false
+PUBLISH_JAVA=false
+PUSH_GIT=true
+CUSTOM_COMMIT_MSG=""
 DRY_RUN=false
 SKIP_TESTS=false
 VERSION_BUMP="patch"
 
 while [[ $# -gt 0 ]]; do
   case $1 in
-    --node-only)   PUBLISH_PYTHON=false; shift ;;
-    --python-only) PUBLISH_NODE=false; shift ;;
+    --node-only)   PUBLISH_PYTHON=false; PUBLISH_DART=false; PUBLISH_JAVA=false; shift ;;
+    --python-only) PUBLISH_NODE=false; PUBLISH_DART=false; PUBLISH_JAVA=false; shift ;;
+    --dart-only)   PUBLISH_NODE=false; PUBLISH_PYTHON=false; PUBLISH_DART=true; PUBLISH_JAVA=false; shift ;;
+    --java-only)   PUBLISH_NODE=false; PUBLISH_PYTHON=false; PUBLISH_DART=false; PUBLISH_JAVA=true; shift ;;
+    --dart)        PUBLISH_DART=true; shift ;;
+    --java)        PUBLISH_JAVA=true; shift ;;
+    --all)         PUBLISH_NODE=true; PUBLISH_PYTHON=true; PUBLISH_DART=true; PUBLISH_JAVA=true; shift ;;
+    --no-push|--skip-git) PUSH_GIT=false; shift ;;
+    -m|--message)  CUSTOM_COMMIT_MSG="$2"; shift 2 ;;
     --dry-run)     DRY_RUN=true; shift ;;
     --skip-tests)  SKIP_TESTS=true; shift ;;
     --major)       VERSION_BUMP="major"; shift ;;
     --minor)       VERSION_BUMP="minor"; shift ;;
     --patch)       VERSION_BUMP="patch"; shift ;;
     -h|--help)
-      echo "Usage: ./publish.sh [--node-only] [--python-only] [--dry-run] [--skip-tests] [--major|--minor|--patch]"
+      echo "Usage: ./publish.sh [options]"
+      echo "Options:"
+      echo "  --patch | --minor | --major   Version bump type (default: patch)"
+      echo "  --all                         Publish Node, Python, Dart, and Java"
+      echo "  --node-only | --python-only   Publish only specific language"
+      echo "  --dart | --java               Include Dart (pub.dev) or Java in release"
+      echo "  --no-push                     Do not commit and push to GitHub"
+      echo "  -m, --message <msg>           Custom git commit message"
+      echo "  --dry-run                     Simulate tests & publish without changing remote"
+      echo "  --skip-tests                  Bypass local pre-flight tests"
       exit 0 ;;
     *) log_error "Unknown option: $1"; exit 1 ;;
   esac
@@ -74,14 +96,39 @@ if $PUBLISH_PYTHON; then
     log_success "Created and repaired Python environment at .venv/"
   fi
 
-  # Ensure build & twine are installed inside the active Python environment
-  for pkg in build twine; do
-    if ! "$PYTHON_BIN" -m "$pkg" --version &> /dev/null; then
-      log_warn "Module '$pkg' missing — installing automatically..."
+  # Ensure packaging & testing dependencies are installed inside the active Python environment
+  for pkg in build twine pathspec rich typer; do
+    if ! "$PYTHON_BIN" -c "import $pkg" &> /dev/null; then
+      log_warn "Python module '$pkg' missing in virtualenv — installing automatically..."
       "$PYTHON_BIN" -m pip install --quiet --upgrade "$pkg"
     fi
   done
-  log_success "Python packaging tools (pip, build, twine) verified & ready"
+  log_success "Python packaging and test tools verified & ready"
+fi
+
+# --- Automated Pre-Flight Test Suite ---
+if ! $SKIP_TESTS; then
+  log_step "🧪 Running Automated Pre-flight Test Suite"
+
+  # 1. Node.js tests
+  log_info "Running Node.js tests..."
+  cd "$NODE_DIR"
+  npm test || { log_error "Node.js tests failed! Halting release."; exit 1; }
+  log_success "Node.js test suite passed"
+
+  # 2. Python tests
+  if [[ -f "$PYTHON_DIR/tests/verify_scanner_graph.py" ]]; then
+    log_info "Running Python AST & scanner tests..."
+    PYTHONPATH="$PYTHON_DIR" "$PYTHON_BIN" "$PYTHON_DIR/tests/verify_scanner_graph.py" || { log_error "Python tests failed! Halting release."; exit 1; }
+    log_success "Python scanner & AST graph tests passed"
+  fi
+
+  # 3. Documentation website build check
+  if [[ -d "$SCRIPT_DIR/website" ]] && command -v bun &> /dev/null; then
+    log_info "Verifying Next.js documentation website build..."
+    (cd "$SCRIPT_DIR/website" && bun run build) || { log_error "Website build failed! Halting release."; exit 1; }
+    log_success "Website build verified"
+  fi
 fi
 
 # --- 1. Node.js (npm) Publishing ---
@@ -90,7 +137,7 @@ if $PUBLISH_NODE; then
   log_step "📦 Publishing to npm"
   cd "$NODE_DIR"
 
-  if ! npm whoami &> /dev/null; then
+  if ! $DRY_RUN && ! npm whoami &> /dev/null; then
     log_error "Not logged in to npm. Run 'npm login' first."
     exit 1
   fi
@@ -143,4 +190,82 @@ if $PUBLISH_PYTHON; then
   fi
 fi
 
-echo -e "\n${GREEN}${BOLD}🎉 Release v$NEW_VERSION complete across npm, Homebrew Formula, and PyPI!${NC}\n"
+# --- 4. Dart (pub.dev) Publishing ---
+if $PUBLISH_DART; then
+  log_step "🎯 Publishing to pub.dev (Dart)"
+  cd "$DART_DIR"
+
+  if ! command -v dart &> /dev/null; then
+    log_warn "dart CLI not installed (run 'brew install dart-sdk'). Skipping pub.dev upload."
+  else
+    sed -i '' "s/^version: .*/version: $NEW_VERSION/" pubspec.yaml
+    if ! $DRY_RUN; then
+      dart pub get
+      dart pub publish --force
+      log_success "Published context_gen v$NEW_VERSION to pub.dev!"
+    else
+      log_info "[DRY RUN] Running 'dart pub publish --dry-run'..."
+      dart pub publish --dry-run || true
+    fi
+  fi
+fi
+
+# --- 5. Java (Maven Central / JBang) Publishing ---
+if $PUBLISH_JAVA; then
+  log_step "☕ Publishing Java Package"
+  cd "$JAVA_DIR"
+
+  if ! command -v mvn &> /dev/null; then
+    log_warn "mvn not found. If Maven is installed, build with 'mvn clean deploy -P release'."
+  else
+    if ! $DRY_RUN; then
+      mvn versions:set -DnewVersion="$NEW_VERSION" -DgenerateBackupPoms=false || true
+      mvn clean deploy -P release
+      log_success "Deployed com.cedzlabs:context-gen-cli:$NEW_VERSION to Central Portal!"
+    else
+      log_info "[DRY RUN] Would deploy com.cedzlabs:context-gen-cli:$NEW_VERSION to Maven Central"
+    fi
+  fi
+fi
+
+# --- 6. Automated Git Commit, Tag & Push to GitHub ---
+if $PUSH_GIT; then
+  log_step "🐙 Pushing Project & Release Tag to GitHub"
+  cd "$SCRIPT_DIR"
+
+  CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "main")
+  if [[ -z "$CURRENT_BRANCH" ]]; then CURRENT_BRANCH="main"; fi
+  COMMIT_MSG="${CUSTOM_COMMIT_MSG:-chore(release): bump version to v${NEW_VERSION}}"
+
+  if ! $DRY_RUN; then
+    # Stage all changes
+    git add -A
+
+    # Commit only if there are diffs
+    if ! git diff --cached --quiet; then
+      git commit -m "$COMMIT_MSG"
+      log_success "Created git commit: '$COMMIT_MSG'"
+    else
+      log_info "Working tree clean, no new commit needed."
+    fi
+
+    # Create annotated tag for the version
+    TAG_NAME="v${NEW_VERSION}"
+    if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
+      log_warn "Tag $TAG_NAME already exists locally. Skipping tag creation."
+    else
+      git tag -a "$TAG_NAME" -m "Release $TAG_NAME"
+      log_success "Created git release tag: $TAG_NAME"
+    fi
+
+    # Push commit and tags to GitHub
+    log_info "Pushing branch '$CURRENT_BRANCH' and release tag to origin..."
+    git push origin "$CURRENT_BRANCH" --follow-tags
+    log_success "Successfully pushed to GitHub repository (origin/$CURRENT_BRANCH)!"
+    log_info "GitHub Actions CI/CD pipeline triggered automatically: https://github.com/yakkshit/context-gen/actions"
+  else
+    log_info "[DRY RUN] Would commit '$COMMIT_MSG', tag 'v$NEW_VERSION', and push to origin/$CURRENT_BRANCH"
+  fi
+fi
+
+echo -e "\n${GREEN}${BOLD}🎉 Release v$NEW_VERSION complete across configured ecosystems and pushed to GitHub!${NC}\n"

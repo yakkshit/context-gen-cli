@@ -1,0 +1,22 @@
+name: context_gen
+description: "⚡ Graph-based project context & Entropy-Guided Reference Distillation (EGRD) CLI for AI coding agents."
+version: 1.3.4
+homepage: https://github.com/yakkshit/context-gen
+repository: https://github.com/yakkshit/context-gen
+issue_tracker: https://github.com/yakkshit/context-gen/issues
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  args: ^2.4.2
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^3.0.0
+  test: ^1.24.0
+
+executables:
+  ctx: ctx
+  context-gen: ctx
+
