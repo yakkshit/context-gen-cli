@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.7
+- Release v1.3.7
+
+# Changelog
+
 ## 1.3.5
 - Bug fix: Exclude virtual environments (`.venv*`) and heavy site-packages from file watcher.
 - Full EGRD Shannon Entropy prompt distillation and Senior Engineer Context Plan generation.
