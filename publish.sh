@@ -227,6 +227,29 @@ if $PUBLISH_JAVA; then
   cd "$JAVA_DIR"
   cp -f "$SCRIPT_DIR/LICENSE" "$JAVA_DIR/LICENSE"
 
+  # Sync Maven Central credentials from .env to ~/.m2/settings.xml
+  if [[ -f "$SCRIPT_DIR/.env" ]]; then
+    ENV_USER=$(grep -E "^MAVIN_USER_NAME=" "$SCRIPT_DIR/.env" | cut -d '=' -f2- | tr -d '"' | tr -d "'" || true)
+    ENV_PASS=$(grep -E "^MAVIN_USER_PASSWORD=" "$SCRIPT_DIR/.env" | cut -d '=' -f2- | tr -d '"' | tr -d "'" || true)
+    if [[ -n "$ENV_USER" && -n "$ENV_PASS" ]]; then
+      mkdir -p "$HOME/.m2"
+      cat <<EOF > "$HOME/.m2/settings.xml"
+<settings xmlns="http://maven.apache.org/SETTINGS/1.0.0"
+          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+          xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 https://maven.apache.org/xsd/settings-1.0.0.xsd">
+    <servers>
+        <server>
+            <id>central</id>
+            <username>$ENV_USER</username>
+            <password>$ENV_PASS</password>
+        </server>
+    </servers>
+</settings>
+EOF
+      log_success "Configured Maven Central credentials from .env"
+    fi
+  fi
+
   if ! command -v mvn &> /dev/null; then
     log_warn "mvn not found. Install Maven via: brew install maven"
   else

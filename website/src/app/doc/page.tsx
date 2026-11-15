@@ -308,10 +308,10 @@ export default function DocPage() {
                     <span>Zero Install JVM CLI</span>
                   </div>
                   <div className="flex items-center justify-between bg-muted/40 px-3 py-2 rounded-lg border border-border">
-                    <code className="text-primary truncate mr-2">jbang com.cedzlabs:context-gen-cli:1.3.4</code>
+                    <code className="text-primary truncate mr-2">jbang com.cedzlabs.java.ctx:context-gen-cli:1.3.5</code>
                     <button
                       type="button"
-                      onClick={() => handleCopy("install-java", "jbang com.cedzlabs:context-gen-cli:1.3.4")}
+                      onClick={() => handleCopy("install-java", "jbang com.cedzlabs.java.ctx:context-gen-cli:1.3.5")}
                       className="p-1 rounded text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
                     >
                       {copiedKey === "install-java" ? <Check className="w-3.5 h-3.5 text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}

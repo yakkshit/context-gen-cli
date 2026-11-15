@@ -8,7 +8,7 @@ Stop dumping 50,000 raw prompt tokens into Claude, Cursor, and ChatGPT. `context
 
 ### Run directly with JBang (Zero manual installation):
 ```bash
-jbang com.cedzlabs:context-gen-cli:1.3.4
+jbang com.cedzlabs.java.ctx:context-gen-cli:1.3.5
 ```
 
 ### Build & Run Executable Fat JAR:
@@ -17,8 +17,8 @@ jbang com.cedzlabs:context-gen-cli:1.3.4
 mvn clean package
 
 # Run CLI
-java -jar target/context-gen-cli-1.3.4-all.jar --help
-java -jar target/context-gen-cli-1.3.4-all.jar --distill "Refactor payment processor service"
+java -jar target/context-gen-cli-1.3.5-all.jar --help
+java -jar target/context-gen-cli-1.3.5-all.jar --distill "Refactor payment processor service"
 ```
 
 ## Publishing to Maven Central

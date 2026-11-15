@@ -20,6 +20,7 @@ __pycache__/
 .DS_Store
 .dart_tool/
 target/
+dependency-reduced-pom.xml
 .gradle/
 .turbo/
 .cache/

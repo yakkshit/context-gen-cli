@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.3.8
+- Release v1.3.8
+
+# Changelog
+
 ## 1.3.7
 - Release v1.3.7
 

@@ -24,7 +24,7 @@ const INSTALL_COMMANDS = {
   pip: "pip install context-gen-cli",
   brew: "brew tap yakkshit/context-gen https://github.com/yakkshit/context-gen.git && brew install context-gen-cli",
   dart: "dart pub global activate context_gen_cli",
-  java: "jbang com.cedzlabs:context-gen-cli:1.3.4",
+  java: "jbang com.cedzlabs.java.ctx:context-gen-cli:1.3.5",
 };
 
 export function Hero() {

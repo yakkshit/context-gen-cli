@@ -55,7 +55,7 @@ ctx -d
 ### Option 5: Java / JVM (JBang / Fat JAR)
 ```bash
 # Run instantly with JBang:
-jbang com.cedzlabs:context-gen-cli:1.3.4
+jbang com.cedzlabs.java.ctx:context-gen-cli:1.3.5
 ```
 
 ---

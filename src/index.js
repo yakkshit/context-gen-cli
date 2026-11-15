@@ -404,7 +404,7 @@ const program = new Command();
 program
   .name("context-gen-cli")
   .description("Scan any project folder and generate context/agent.md or context/agent.json model for LLMs")
-  .version("1.3.7")
+  .version("1.3.8")
   .addHelpText("after", () => `\n${showUsageGuideText()}`)
   .argument("[path]", "Directory path of the project to scan", ".")
   .option("-d, --default", "Run in zero-config default mode: generate context, boot MCP server, and keep watch running", false)
